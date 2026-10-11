@@ -1,0 +1,7 @@
+{
+  "pipeline": "orders_daily",
+  "task": "load_raw_orders",
+  "attempt": 1,
+  "downstream": ["sales_dashboard"],
+  "error_log": "AnalysisException: [PATH_NOT_FOUND] Path does not exist: s3://acme-landing/orders/dt=2026-10-11/. The upstream export usually lands by 02:00 UTC; current time 01:40 UTC."
+}

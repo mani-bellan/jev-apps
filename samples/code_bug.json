@@ -1,0 +1,7 @@
+{
+  "pipeline": "orders_daily",
+  "task": "enrich_orders",
+  "attempt": 1,
+  "downstream": ["sales_dashboard"],
+  "error_log": "Traceback (most recent call last):\n  File \"/opt/airflow/dags/orders/enrich.py\", line 88, in enrich_orders\n    rates = load_fx_rates(run_date, currency=\"USD\")\nTypeError: load_fx_rates() got an unexpected keyword argument 'currency'\nNote: dags/orders/enrich.py was changed in today's deploy."
+}

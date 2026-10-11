@@ -1,0 +1,7 @@
+{
+  "pipeline": "billing_usage",
+  "task": "aggregate_usage_events",
+  "attempt": 3,
+  "downstream": ["customer_invoices", "finance_revenue_report"],
+  "error_log": "org.apache.spark.SparkException: Job aborted due to stage failure: Task 12 in stage 4.0 failed 4 times, most recent failure: Lost task 12.3 in stage 4.0: ExecutorLostFailure (executor 7 exited caused by one of the running tasks) Reason: Container killed by YARN for exceeding memory limits. 15.2 GB of 15 GB physical memory used."
+}

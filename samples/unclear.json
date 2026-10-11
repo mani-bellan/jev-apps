@@ -1,0 +1,7 @@
+{
+  "pipeline": "inventory_snapshot",
+  "task": "run_snapshot",
+  "attempt": 1,
+  "downstream": ["ops_dashboard"],
+  "error_log": "[2026-10-11 03:12:44] INFO - Task exited with return code 1"
+}

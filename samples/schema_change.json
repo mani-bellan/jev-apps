@@ -1,0 +1,7 @@
+{
+  "pipeline": "crm_sync",
+  "task": "transform_accounts",
+  "attempt": 1,
+  "downstream": ["sales_dashboard"],
+  "error_log": "snowflake.connector.errors.ProgrammingError: 000904 (42000): SQL compilation error: error line 3 at position 4\ninvalid identifier 'ACCOUNT_OWNER_ID'\nNote: the source table RAW.SALESFORCE.ACCOUNTS now has a column OWNER_USER_ID that did not exist yesterday."
+}

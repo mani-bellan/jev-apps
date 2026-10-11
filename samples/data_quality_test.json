@@ -1,0 +1,7 @@
+{
+  "pipeline": "finance_ledger",
+  "task": "dbt_test_fct_payments",
+  "attempt": 1,
+  "downstream": ["finance_revenue_report", "regulatory_filings"],
+  "error_log": "Failure in test unique_fct_payments_payment_id (models/marts/finance/fct_payments.yml)\n  Got 1,284 results, configured to fail if != 0\n  compiled code at target/compiled/finance/unique_fct_payments_payment_id.sql"
+}

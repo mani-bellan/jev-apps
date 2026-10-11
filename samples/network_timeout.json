@@ -1,0 +1,7 @@
+{
+  "pipeline": "marketing_events",
+  "task": "extract_hubspot_contacts",
+  "attempt": 1,
+  "downstream": ["marketing_sandbox"],
+  "error_log": "requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='api.hubapi.com', port=443): Read timed out. (read timeout=60)\nWARNING - Received 503 Service Unavailable on previous request, backing off"
+}
