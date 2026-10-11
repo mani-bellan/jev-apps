@@ -1,11 +1,24 @@
 # Jev apps
 
 Two small Python apps built on [Jev](https://docs.typesafe.ai/introduction), TypeSafe AI's
-decision model. Both read `TYPESAFE_API_KEY` from the environment
-(get one at https://console.typesafe.ai/keys).
+decision model.
 
 - **Pipeline failure triage** (`triage.py`): decides what to do about a failed data-pipeline task.
 - **Customer support router** (`main.py`): routes customer messages to specialist agents.
+
+Read the write-up: [Triage pipeline failures in 100 ms with Jev](blog/jev-pipeline-triage.md).
+
+## API key
+
+Both apps read your key from the `TYPESAFE_API_KEY` environment variable (get one at
+https://console.typesafe.ai/keys). The key is never stored in this repository. Set it in your
+shell, or put it in a `.env` file, which `.gitignore` excludes:
+
+```bash
+export TYPESAFE_API_KEY=...
+# or
+echo 'TYPESAFE_API_KEY=...' > .env && uv run --env-file .env triage.py samples/*.json
+```
 
 ## Pipeline failure triage
 
