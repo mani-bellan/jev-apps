@@ -1,0 +1,9 @@
+{
+  "pipeline": "shop_dbt",
+  "task": "dim_customers",
+  "attempt": 1,
+  "downstream": [
+    "marketing_newsletter_list"
+  ],
+  "error_log": "04:23:12  Completed with 1 error, 0 partial successes, and 0 warnings:\n04:23:12  \n04:23:12  [ERROR]: in model dim_customers (models/marts/dim_customers.sql)\n04:23:12    Runtime Error in model dim_customers (models/marts/dim_customers.sql)\n  Parser Error: syntax error at or near \"grop\"\n  \n  LINE 19: grop by all\n           ^\n04:23:12  \n04:23:12    compiled code at target/compiled/shop/models/marts/dim_customers.sql\n04:23:12  \n04:23:12  Done. PASS=15 WARN=0 ERROR=1 SKIP=3 NO-OP=2 REUSED=0 TOTAL=21"
+}

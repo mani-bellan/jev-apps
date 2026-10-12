@@ -22,30 +22,47 @@ echo 'TYPESAFE_API_KEY=...' > .env && uv run --env-file .env triage.py samples/*
 
 ## Pipeline failure triage
 
-One Jev call per failed task answers three questions together. Code in `triage()` turns the
-answers into one action:
+One Jev call per failed task answers two questions together: the root cause (a `choice`) and the
+impact on downstream data (a `score`). Code in `triage()` turns the answers into one action:
 
 | Jev answers | Action |
 |---|---|
 | cause is `unknown`, or confidence in the cause < 0.6 | **review** by a human |
-| cause is transient (network, late upstream data, resources), retry likely to succeed ≥ 0.5, attempts left | **retry** with a cause-specific plan |
+| cause can clear up by itself (network, late upstream data, resources) and attempts are left | **retry** with a cause-specific plan |
 | expected impact ≥ 1.5 on a 0–2 scale | **page** on-call for the owning team |
 | anything else | **ticket** for the owning team |
 
 ```bash
-uv run triage.py samples/*.json
+uv run triage.py samples/*.json samples/dbt/*.json
 ```
 
 ```
-samples/oom_retries_exhausted.json  (billing_usage.aggregate_usage_events, attempt 3/3)
-  Jev: cause resources (1.00 confidence), retry will succeed 0.38, impact 2.0/2
-  → PAGE on-call for the platform team: billing_usage.aggregate_usage_events failed (resources)
+samples/dbt/duplicate_payment.json  (shop_dbt.unique_stg_payments_payment_id, attempt 1/3)
+  Jev: cause data_quality (1.00 confidence), impact 2.0/2
+  → PAGE on-call for the upstream data owners: shop_dbt.unique_stg_payments_payment_id failed (data_quality)
 ```
 
 A failure is a JSON object with `pipeline`, `task`, `attempt`, and `error_log`; any other fields,
 such as `downstream`, are context that Jev reads too. Actions are a dry run: replace the prints
 in `dispatch()` with your scheduler, ticketing, and paging APIs (for example Airflow, Jira, and
 PagerDuty). Causes, owners, and thresholds are constants at the top of `triage.py`.
+
+`samples/*.json` are eight hand-written failures. `samples/dbt/*.json` are ten real dbt failures,
+captured from the demo project below.
+
+## Real dbt failures (`dbt_demo/`)
+
+A small dbt project on DuckDB: three CSV sources, five models, 13 tests, and three exposures
+(finance report, customer invoices, marketing list). `run_scenarios.py` breaks it ten realistic
+ways (duplicate key, missing email, renamed source column, SQL typo, missing partition, out of
+memory, unreachable source, and three held-out cases), runs `dbt build`, and saves each real
+failure to `samples/dbt/`, with the downstream models and exposures read from dbt's manifest.
+With `TYPESAFE_API_KEY` set, it then runs the triage app on each failure and scores it against
+the expected cause and action.
+
+```bash
+uv run --group dbt dbt_demo/run_scenarios.py
+```
 
 ## Customer support router
 

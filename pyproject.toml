@@ -10,6 +10,10 @@ dependencies = [
 pythonpath = ["."]
 
 [dependency-groups]
+dbt = [
+    "dbt-core>=1.12.5",
+    "dbt-duckdb>=1.11.0",
+]
 dev = [
     "pytest>=9.1.1",
 ]

@@ -3,3 +3,7 @@ __pycache__/
 .pytest_cache/
 .env
 .env.*
+dbt_demo/target/
+dbt_demo/logs/
+dbt_demo/*.duckdb*
+dbt_demo/.user.yml

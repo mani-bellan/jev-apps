@@ -1,0 +1,13 @@
+{
+  "pipeline": "shop_dbt",
+  "task": "accepted_values_stg_orders_status__placed__shipped__completed__returned",
+  "attempt": 1,
+  "downstream": [
+    "customer_invoices",
+    "dim_customers",
+    "fct_orders",
+    "finance_revenue_report",
+    "marketing_newsletter_list"
+  ],
+  "error_log": "04:23:35  Completed with 1 error, 0 partial successes, and 0 warnings:\n04:23:35  \n04:23:35  [ERROR]: in test accepted_values_stg_orders_status__placed__shipped__completed__returned (models/schema.yml)\n04:23:35    Got 1 result, configured to fail if != 0\n04:23:35  \n04:23:35    compiled code at target/compiled/shop/models/schema.yml/accepted_values_stg_orders_7c9e0be389dac14a09b2140966f0792f.sql\n04:23:35  \n04:23:35  Done. PASS=11 WARN=0 ERROR=1 SKIP=9 NO-OP=0 REUSED=0 TOTAL=21"
+}

@@ -1,0 +1,13 @@
+{
+  "pipeline": "shop_dbt",
+  "task": "stg_customers",
+  "attempt": 1,
+  "downstream": [
+    "customer_invoices",
+    "dim_customers",
+    "fct_orders",
+    "finance_revenue_report",
+    "marketing_newsletter_list"
+  ],
+  "error_log": "04:23:23  Completed with 3 errors, 0 partial successes, and 0 warnings:\n04:23:23  \n04:23:23  [ERROR]: in model stg_customers (models/staging/stg_customers.sql)\n04:23:23    Runtime Error in model stg_customers (models/staging/stg_customers.sql)\n  Out of Memory Error: could not allocate block of size 30.5 MiB (0 bytes/976.5 KiB used)\n  \n  Possible solutions:\n  * Reducing the number of threads (SET threads=X)\n  * Disabling insertion-order preservation (SET preserve_insertion_order=false)\n  * Increasing the memory limit (SET memory_limit='...GB')\n  \n  See also https://duckdb.org/docs/stable/guides/performance/how_to_tune_workloads\n  \n  LINE 10: from read_csv('data/customers.csv', header = true)\n                ^\n04:23:23  \n04:23:23    compiled code at target/compiled/shop/models/staging/stg_customers.sql\n04:23:23  \n04:23:23  [ERROR]: in model stg_orders (models/staging/stg_orders.sql)\n04:23:23    Runtime Error in model stg_orders (models/staging/stg_orders.sql)\n  Out of Memory Error: could not allocate block of size 30.5 MiB (0 bytes/976.5 KiB used)\n  \n  Possible solutions:\n  * Reducing the number of threads (SET threads=X)\n  * Disabling insertion-order preservation (SET preserve_insertion_order=false)\n  * Increasing the memory limit (SET memory_limit='...GB')\n  \n  See also https://duckdb.org/docs/stable/guides/performance/how_to_tune_workloads\n  \n  LINE 10: from read_csv('data/orders/dt=2026-10-11/orders.csv', header...\n                ^\n04:23:23  \n04:23:23    compiled code at target/compiled/shop/models/staging/stg_orders.sql\n04:23:23  \n04:23:23  [ERROR]: in model stg_payments (models/staging/stg_payments.sql)\n04:23:23    Runtime Error in model stg_payments (models/staging/stg_payments.sql)\n  Out of Memory Error: could not allocate block of size 30.5 MiB (0 bytes/976.5 KiB used)\n  \n  Possible solutions:\n  * Reducing the number of threads (SET threads=X)\n  * Disabling insertion-order preservation (SET preserve_insertion_order=false)\n  * Increasing the memory limit (SET memory_limit='...GB')\n  \n  See also https://duckdb.org/docs/stable/guides/performance/how_to_tune_workloads\n  \n  LINE 10: from read_csv('data/payments.csv', header = true)\n                ^\n04:23:23  \n04:23:23    compiled code at target/compiled/shop/models/staging/stg_payments.sql\n04:23:23  \n04:23:23  Done. PASS=0 WARN=0 ERROR=3 SKIP=18 NO-OP=0 REUSED=0 TOTAL=21"
+}

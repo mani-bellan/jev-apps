@@ -1,0 +1,11 @@
+{
+  "pipeline": "shop_dbt",
+  "task": "stg_payments",
+  "attempt": 1,
+  "downstream": [
+    "customer_invoices",
+    "fct_orders",
+    "finance_revenue_report"
+  ],
+  "error_log": "04:23:47  Completed with 1 error, 0 partial successes, and 0 warnings:\n04:23:47  \n04:23:47  [ERROR]: in model stg_payments (models/staging/stg_payments.sql)\n04:23:47    Runtime Error in model stg_payments (models/staging/stg_payments.sql)\n  Binder Error: No function matches the given name and argument types '/(VARCHAR, DECIMAL(4,1))'. You might need to add explicit type casts.\n  \tCandidate functions:\n  \t/(FLOAT, FLOAT) -> FLOAT\n  \t/(DOUBLE, DOUBLE) -> DOUBLE\n  \t/(INTERVAL, DOUBLE) -> INTERVAL\n  \n  \n  LINE 9:     amount_cents / 100.0 as amount\n                           ^\n04:23:47  \n04:23:47    compiled code at target/compiled/shop/models/staging/stg_payments.sql\n04:23:47  \n04:23:47  Done. PASS=11 WARN=0 ERROR=1 SKIP=8 NO-OP=1 REUSED=0 TOTAL=21"
+}

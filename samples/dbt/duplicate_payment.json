@@ -1,0 +1,11 @@
+{
+  "pipeline": "shop_dbt",
+  "task": "unique_stg_payments_payment_id",
+  "attempt": 1,
+  "downstream": [
+    "customer_invoices",
+    "fct_orders",
+    "finance_revenue_report"
+  ],
+  "error_log": "04:22:56  Completed with 1 error, 0 partial successes, and 0 warnings:\n04:22:56  \n04:22:56  [ERROR]: in test unique_stg_payments_payment_id (models/schema.yml)\n04:22:56    Got 1 result, configured to fail if != 0\n04:22:56  \n04:22:56    compiled code at target/compiled/shop/models/schema.yml/unique_stg_payments_payment_id.sql\n04:22:56  \n04:22:56  Done. PASS=14 WARN=0 ERROR=1 SKIP=5 NO-OP=1 REUSED=0 TOTAL=21"
+}

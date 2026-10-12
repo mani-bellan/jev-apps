@@ -1,0 +1,10 @@
+{
+  "pipeline": "shop_dbt",
+  "task": "stg_customers",
+  "attempt": 1,
+  "downstream": [
+    "dim_customers",
+    "marketing_newsletter_list"
+  ],
+  "error_log": "04:23:07  Completed with 1 error, 0 partial successes, and 0 warnings:\n04:23:07  \n04:23:07  [ERROR]: in model stg_customers (models/staging/stg_customers.sql)\n04:23:07    Runtime Error in model stg_customers (models/staging/stg_customers.sql)\n  Binder Error: Referenced column \"email\" not found in FROM clause!\n  Candidate bindings: \"email_address\"\n  \n  LINE 8:     email,\n              ^\n04:23:07  \n04:23:07    compiled code at target/compiled/shop/models/staging/stg_customers.sql\n04:23:07  \n04:23:07  Done. PASS=11 WARN=0 ERROR=1 SKIP=7 NO-OP=2 REUSED=0 TOTAL=21"
+}

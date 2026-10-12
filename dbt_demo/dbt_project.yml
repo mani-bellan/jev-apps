@@ -1,0 +1,18 @@
+name: shop
+version: "1.0.0"
+profile: shop
+
+model-paths: ["models"]
+target-path: target
+
+vars:
+  # The daily orders export lands in data/orders/dt=<run_date>/.
+  run_date: "2026-10-11"
+  data_dir: "data"
+
+models:
+  shop:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table

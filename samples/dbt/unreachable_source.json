@@ -1,0 +1,13 @@
+{
+  "pipeline": "shop_dbt",
+  "task": "stg_customers",
+  "attempt": 1,
+  "downstream": [
+    "customer_invoices",
+    "dim_customers",
+    "fct_orders",
+    "finance_revenue_report",
+    "marketing_newsletter_list"
+  ],
+  "error_log": "04:23:30  Completed with 3 errors, 0 partial successes, and 0 warnings:\n04:23:30  \n04:23:30  [ERROR]: in model stg_customers (models/staging/stg_customers.sql)\n04:23:30    Runtime Error in model stg_customers (models/staging/stg_customers.sql)\n  IO Error: Could not resolve hostname error for HTTP HEAD to 'https://exports.shop-data.invalid/customers.csv'\n  \n  LINE 10: from read_csv('https://exports.shop-data.invalid/customers.csv...\n                ^\n04:23:30  \n04:23:30    compiled code at target/compiled/shop/models/staging/stg_customers.sql\n04:23:30  \n04:23:30  [ERROR]: in model stg_orders (models/staging/stg_orders.sql)\n04:23:30    Runtime Error in model stg_orders (models/staging/stg_orders.sql)\n  IO Error: Could not resolve hostname error for HTTP HEAD to 'https://exports.shop-data.invalid/orders/dt=2026-10-11/orders.csv'\n  \n  LINE 10: from read_csv('https://exports.shop-data.invalid/orders/dt=2026...\n                ^\n04:23:30  \n04:23:30    compiled code at target/compiled/shop/models/staging/stg_orders.sql\n04:23:30  \n04:23:30  [ERROR]: in model stg_payments (models/staging/stg_payments.sql)\n04:23:30    Runtime Error in model stg_payments (models/staging/stg_payments.sql)\n  IO Error: Could not resolve hostname error for HTTP HEAD to 'https://exports.shop-data.invalid/payments.csv'\n  \n  LINE 10: from read_csv('https://exports.shop-data.invalid/payments.csv...\n                ^\n04:23:30  \n04:23:30    compiled code at target/compiled/shop/models/staging/stg_payments.sql\n04:23:30  \n04:23:30  Done. PASS=0 WARN=0 ERROR=3 SKIP=18 NO-OP=0 REUSED=0 TOTAL=21"
+}

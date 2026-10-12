@@ -1,0 +1,9 @@
+shop:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: shop.duckdb
+      threads: 1
+      settings:
+        memory_limit: "{{ env_var('DUCKDB_MEMORY_LIMIT', '1GB') }}"

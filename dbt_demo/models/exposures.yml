@@ -1,0 +1,16 @@
+exposures:
+  - name: finance_revenue_report
+    type: dashboard
+    owner: {name: Finance, email: finance@example.com}
+    description: Daily revenue report used by finance for month-end close.
+    depends_on: [ref('fct_orders')]
+  - name: customer_invoices
+    type: application
+    owner: {name: Billing, email: billing@example.com}
+    description: Invoices emailed to customers each morning.
+    depends_on: [ref('fct_orders')]
+  - name: marketing_newsletter_list
+    type: application
+    owner: {name: Marketing, email: marketing@example.com}
+    description: Weekly newsletter audience.
+    depends_on: [ref('dim_customers')]

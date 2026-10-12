@@ -1,0 +1,11 @@
+id,order_id,method,amount_cents
+1001,101,card,4999
+1002,102,card,1500
+1003,103,bank_transfer,8900
+1004,104,card,2250
+1005,105,card,3100
+1006,106,gift_card,1000
+1007,107,card,7600
+1008,108,bank_transfer,4200
+1009,109,card,1999
+1010,110,card,5600

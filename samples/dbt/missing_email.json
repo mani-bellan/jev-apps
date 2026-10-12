@@ -1,0 +1,10 @@
+{
+  "pipeline": "shop_dbt",
+  "task": "not_null_stg_customers_email",
+  "attempt": 1,
+  "downstream": [
+    "dim_customers",
+    "marketing_newsletter_list"
+  ],
+  "error_log": "04:23:01  Completed with 1 error, 0 partial successes, and 0 warnings:\n04:23:01  \n04:23:01  [ERROR]: in test not_null_stg_customers_email (models/schema.yml)\n04:23:01    Got 1 result, configured to fail if != 0\n04:23:01  \n04:23:01    compiled code at target/compiled/shop/models/schema.yml/not_null_stg_customers_email.sql\n04:23:01  \n04:23:01  Done. PASS=14 WARN=0 ERROR=1 SKIP=4 NO-OP=2 REUSED=0 TOTAL=21"
+}
