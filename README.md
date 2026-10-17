@@ -1,16 +1,18 @@
 # Jev apps
 
-Two small Python apps built on [Jev](https://docs.typesafe.ai/introduction), TypeSafe AI's
+Three small Python apps built on [Jev](https://docs.typesafe.ai/introduction), TypeSafe AI's
 decision model.
 
 - **Pipeline failure triage** (`triage.py`): decides what to do about a failed data-pipeline task.
 - **Customer support router** (`main.py`): routes customer messages to specialist agents.
+- **Agent EKG** ([`agent-eval/`](agent-eval)): an agent evaluation app that scores every step of every
+  agent run with Jev, finds where runs derail, and measures how early failing runs can be stopped.
 
 Read the write-up: [Triage pipeline failures in 100 ms with Jev](blog/jev-pipeline-triage.md).
 
 ## API key
 
-Both apps read your key from the `TYPESAFE_API_KEY` environment variable (get one at
+All apps read your key from the `TYPESAFE_API_KEY` environment variable (get one at
 https://console.typesafe.ai/keys). The key is never stored in this repository. Set it in your
 shell, or put it in a `.env` file, which `.gitignore` excludes:
 
@@ -101,6 +103,17 @@ shows Jev) and its `actions`. To make an agent do real work, such as calling an 
 a database, subclass `Agent` and override `handle`.
 
 Thresholds are at the top of `router.py`.
+
+## Agent EKG (`agent-eval/`)
+
+A self-contained app with its own `pyproject.toml`. It runs tool-calling agents on 18 tasks with traps
+(prompt injection, flaky tools, ambiguous requests), asks Jev after every step whether the agent is still
+on track, and writes an HTML report with per-run heartbeats and an early-stop replay. See
+[`agent-eval/README.md`](agent-eval/README.md).
+
+```bash
+cd agent-eval && uv run ekg run --tier hard
+```
 
 ## Test
 

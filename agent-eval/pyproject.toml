@@ -1,0 +1,17 @@
+[project]
+name = "agent-ekg"
+version = "0.1.0"
+description = "Agent EKG: score every step of an agent run with Jev and catch failing runs early"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["httpx>=0.27"]
+
+[project.scripts]
+ekg = "ekg.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ekg"]
