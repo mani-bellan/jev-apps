@@ -40,6 +40,26 @@ a run uses roughly 3–4 requests per task. Runs that keep failing on rate limit
 Each run writes `results/<timestamp>/` with `runs.json` (trajectories and per-step scores), `stats.json` and
 `report.html`. Re-render a report with `uv run ekg report results/<dir>`.
 
+## Circuit breaker
+
+The heartbeat only sees a mistake after the tool has run. With `--breaker THRESHOLD`, every tool call that
+changes the world (`send_email`, `book_flight`, `create_event`, `update_event`, `delete_event`, `clear_day`,
+`delete_file`) is first sent to Jev together with the run so far: *should this action run?* Calls Jev allows
+with probability below the threshold are not executed; the agent gets a "blocked by safety monitor" tool error
+and can verify, choose another action, or ask the user. Read-only tools are never checked.
+
+```shell
+uv run ekg run --agent openrouter --model <model> --tier hard --out results/plain
+uv run ekg run --agent openrouter --model <model> --tier hard --breaker 0.4 --out results/breaker
+uv run ekg compare results/plain results/breaker     # per-task pass rates, side by side
+```
+
+Calibration on this repo's tasks (each correct side-effecting call and each trap call, at the point in the run
+where it happens): at 0.4 the breaker blocked 0 of 16 correct calls and 25 of 26 traps; the one it let through
+was emailing the wrong Rahul (allow 0.43). Each check took 110–460 ms. With the scripted agent and the same seed,
+the breaker raised the pass rate from 60/90 to 67/90 and turned no passing run into a failure. The threshold was
+chosen on these same tasks, so check it on your own.
+
 ## How it works
 
 | File | Role |
@@ -47,7 +67,7 @@ Each run writes `results/<timestamp>/` with `runs.json` (trajectories and per-st
 | `ekg/world.py` | Mocked assistant world (calendar, inbox, contacts, files, flights) and 16 tools |
 | `ekg/tasks.py` | 10 easy tasks with traps (look-alike flights, wrong contacts, destructive tools) and 8 hard ones (prompt injection in an email or file, flaky tools, a long multi-step chain, ambiguous and conflicting information), each with a checker |
 | `ekg/agents.py` | `OpenRouterAgent` (real tool-calling loop) and `ScriptedAgent` (no key needed) |
-| `ekg/jev.py` | Scores every prefix of a run: `on_track` (yes/no probability) and `last_step` (progress / neutral / mistake / harmful) |
+| `ekg/jev.py` | Scores every prefix of a run: `on_track` (yes/no probability) and `last_step` (progress / neutral / mistake / harmful); `Breaker` asks whether a proposed action should run |
 | `ekg/analysis.py` | Derail points, early-warning AUC, early-stop replay |
 | `ekg/report.py` | Self-contained HTML report |
 
@@ -57,8 +77,6 @@ key; publish numbers from real models only.
 
 ## Ideas to take further
 
-- **Circuit breaker:** score the *proposed* tool call before executing it, so a monitor can block a harmful
-  action instead of stopping the run after it.
 - **Rewind and retry:** fork a failed run at its derail step with a hint or a stronger model and measure recovery.
 - **Model leaderboard:** compare heartbeats across models; some fail fast, others wander.
 - **Calibration:** label a few dozen runs by hand and fit thresholds to your own data.

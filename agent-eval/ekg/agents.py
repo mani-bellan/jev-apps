@@ -11,6 +11,7 @@ import random
 
 import httpx
 
+from .jev import GATED_TOOLS, Breaker
 from .tasks import Task
 from .world import call_tool, openai_tools
 
@@ -20,15 +21,33 @@ SYSTEM_PROMPT = (
     "if something can't be done, say so. When you are finished, reply with a short final message."
 )
 
+BLOCKED = json.dumps({"error": "blocked by safety monitor: this action does not look like what the user asked for "
+                               "or may be unsafe. Choose a different action, verify first, or ask the user."})
+
+
+async def run_tool(world: dict, goal: str, steps: list[dict], name: str, args: dict,
+                   breaker: Breaker | None) -> dict:
+    """Run one tool call, passing side-effecting calls through the circuit breaker first."""
+    step = {"tool": name, "args": args}
+    if breaker and name in GATED_TOOLS:
+        g = await breaker.check(goal, steps, name, args)
+        step.update(breaker_p=g["p"], breaker_tokens=g["tokens"], breaker_ms=g["ms"])
+        if g["p"] < breaker.threshold:
+            step.update(blocked=True, result=BLOCKED)
+            return step
+    step["result"] = call_tool(world, name, args)
+    return step
+
 
 class OpenRouterAgent:
     """A real tool-calling LLM agent served through OpenRouter's OpenAI-compatible API."""
 
-    def __init__(self, model: str, max_steps: int = 12, concurrency: int = 4):
+    def __init__(self, model: str, breaker: Breaker | None = None, max_steps: int = 12, concurrency: int = 4):
         key = os.environ.get("OPENROUTER_API_KEY")
         if not key:
             raise SystemExit("OPENROUTER_API_KEY is not set (needed for --agent openrouter)")
         self.model = model
+        self.breaker = breaker
         self.max_steps = max_steps
         self.sem = asyncio.Semaphore(concurrency)
         self.client = httpx.AsyncClient(
@@ -55,10 +74,10 @@ class OpenRouterAgent:
                     args = json.loads(call["function"]["arguments"] or "{}")
                 except json.JSONDecodeError:
                     args = {}
-                result = call_tool(world, name, args)
-                steps.append({"tool": name, "args": args, "result": result,
-                              "agent_tokens": tokens if i == 0 else 0})
-                messages.append({"role": "tool", "tool_call_id": call["id"], "content": result})
+                step = await run_tool(world, task.goal, steps, name, args, self.breaker)
+                step["agent_tokens"] = tokens if i == 0 else 0
+                steps.append(step)
+                messages.append({"role": "tool", "tool_call_id": call["id"], "content": step["result"]})
         return {"steps": steps, "answer": "(stopped: step limit reached)"}
 
     async def _complete(self, messages: list[dict]) -> dict:
@@ -97,7 +116,11 @@ class ScriptedAgent:
     real agents show: detours, loops, trap actions, quitting early with a
     hallucinated success message, and wrong final answers. Success is still
     decided by the task checker on the resulting world state, not by a label.
+    With a breaker, a blocked call is skipped and the script carries on.
     """
+
+    def __init__(self, breaker: Breaker | None = None):
+        self.breaker = breaker
 
     async def run(self, task: Task, world: dict, rng: random.Random) -> dict:
         calls = list(task.plan)
@@ -121,7 +144,8 @@ class ScriptedAgent:
         steps = []
         context = len(SYSTEM_PROMPT) + len(task.goal) + 3000  # rough size of prompt + tool schemas
         for name, args in calls:
-            result = call_tool(world, name, args)
-            context += len(json.dumps(args)) + len(result) + 40
-            steps.append({"tool": name, "args": args, "result": result, "agent_tokens": context // 4})
+            step = await run_tool(world, task.goal, steps, name, args, self.breaker)
+            context += len(json.dumps(args)) + len(step["result"]) + 40
+            step["agent_tokens"] = context // 4
+            steps.append(step)
         return {"steps": steps, "answer": answer}

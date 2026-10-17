@@ -85,7 +85,14 @@ def analyze(runs: list[dict]) -> dict:
 
     derails = [d for r in failed if (d := derail_point(r)) is not None]
     final_auc = auc([1 - curve(r)[-1] for r in failed], [1 - curve(r)[-1] for r in passed])
-    jev_tokens = sum(s["jev_input_tokens"] for r in runs for s in r["scores"])
+    gated = [(r, s) for r in runs for s in r["steps"] if "breaker_p" in s]
+    breaker = {
+        "gated": len(gated),
+        "blocked": sum(bool(s.get("blocked")) for _, s in gated),
+        "median_ms": sorted(s["breaker_ms"] for _, s in gated)[len(gated) // 2] if gated else None,
+    } if gated else None
+    jev_tokens = (sum(s["jev_input_tokens"] for r in runs for s in r["scores"])
+                  + sum(s["breaker_tokens"] for _, s in gated))
     return {
         "runs": len(runs),
         "passed": len(passed),
@@ -95,6 +102,7 @@ def analyze(runs: list[dict]) -> dict:
         "by_step": by_step,
         "median_derail_step": sorted(derails)[len(derails) // 2] + 1 if derails else None,
         "final_auc": final_auc,
-        "jev_calls": sum(len(r["scores"]) for r in runs),
+        "breaker": breaker,
+        "jev_calls": sum(len(r["scores"]) for r in runs) + len(gated),
         "jev_cost_usd": jev_tokens * JEV_PRICE_PER_INPUT_TOKEN,
     }

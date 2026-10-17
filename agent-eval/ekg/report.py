@@ -5,7 +5,7 @@ import json
 
 from .analysis import curve, derail_point, kill_step
 
-OK, BAD, GRID, MUTED = "#22c55e", "#f43f5e", "#1f2a37", "#8b98a9"
+OK, BAD, GRID, MUTED, BREAKER = "#22c55e", "#f43f5e", "#1f2a37", "#8b98a9", "#38bdf8"
 LABEL_COLORS = {"progress": OK, "neutral": "#94a3b8", "mistake": "#f59e0b", "harmful": BAD}
 HEADLINE_STEP = 3
 
@@ -95,6 +95,10 @@ def mini_chart(run, threshold, w=300, h=96) -> str:
         out.append(f'<line x1="{x:.1f}" x2="{x:.1f}" y1="{t}" y2="{h - b}" stroke="#eab308" stroke-width="1.5"/>')
     for i, ((x, y), s) in enumerate(zip(pts, run["scores"])):
         label = "final answer" if i == len(run["steps"]) else run["steps"][i]["tool"]
+        if i < len(run["steps"]) and run["steps"][i].get("blocked"):
+            label += " (blocked by breaker)"
+            out.append(f'<rect x="{x - 7:.1f}" y="{y - 7:.1f}" width="14" height="14" fill="none" '
+                       f'stroke="{BREAKER}" stroke-width="2"/>')
         out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{5 if i == n - 1 else 4}" '
                    f'fill="{LABEL_COLORS.get(s["last_step"], MUTED)}" stroke="#0b0f14" stroke-width="1.5">'
                    f'<title>{i + 1}. {_esc(label)}: {s["last_step"]}, P(on track)={s["on_track"]:.2f}</title></circle>')
@@ -105,7 +109,10 @@ def run_card(run, threshold) -> str:
     k = kill_step(run, threshold)
     c = curve(run)
     status = ('<span class="ok">✓ passed</span>' if run["success"] else '<span class="bad">✗ failed</span>')
-    if k is not None:
+    blocked = sum(bool(st.get("blocked")) for st in run["steps"])
+    if blocked:
+        note = f"breaker blocked {blocked} call{'s' if blocked > 1 else ''}"
+    elif k is not None:
         note = f"monitor stops it after step {k + 1}"
     elif c[-1] < 0.5:
         note = "flatlines at the final answer"
@@ -115,7 +122,11 @@ def run_card(run, threshold) -> str:
         note = "steady heartbeat"
     rows = []
     for i, (st, sc) in enumerate(zip(run["steps"], run["scores"])):
-        rows.append(f'<li><b style="color:{LABEL_COLORS.get(sc["last_step"], MUTED)}">{sc["last_step"]}</b> '
+        gate = ""
+        if "breaker_p" in st:
+            gate = (f'<span class="blk">⛔ blocked, allow={st["breaker_p"]:.2f}</span> ' if st.get("blocked")
+                    else f'<span class="p">gate allow={st["breaker_p"]:.2f}</span> ')
+        rows.append(f'<li><b style="color:{LABEL_COLORS.get(sc["last_step"], MUTED)}">{sc["last_step"]}</b> {gate}'
                     f'<code>{_esc(st["tool"])}({_esc(json.dumps(st["args"]))[:140]})</code> '
                     f'<span class="p">{sc["on_track"]:.2f}</span></li>')
     fs = run["scores"][-1]
@@ -145,7 +156,7 @@ def render(runs: list[dict], stats: dict, meta: dict) -> str:
          f'{_pct(head["false_alarm_rate"])} false alarms on passing runs'),
         ("Agent tokens saved by stopping early", _pct(best["tokens_saved_rate"]),
          f'stop when P(on track) &lt; {thr:g} · {best["false_kills"]} good runs stopped'),
-        ("Jev cost to score every step", f'${stats["jev_cost_usd"]:.4f}', f'{stats["jev_calls"]} step scores'),
+        ("Jev cost to score every step", f'${stats["jev_cost_usd"]:.4f}', f'{stats["jev_calls"]} Jev calls'),
     ]
     card_html = "".join(f'<div class="stat"><div class="sl">{a}</div><div class="sv">{b}</div>'
                         f'<div class="ss">{c}</div></div>' for a, b, c in cards)
@@ -156,6 +167,20 @@ def render(runs: list[dict], stats: dict, meta: dict) -> str:
         for s in stats["stops"])
     auc_rows = "".join(f'<td>{s["auc"]:.2f}</td>' if s["auc"] is not None else "<td>–</td>" for s in stats["by_step"])
     ordered = sorted(runs, key=lambda r: (r["success"], r["task_id"], r["repeat"]))
+    breaker_html = ""
+    if stats.get("breaker"):
+        b = stats["breaker"]
+        blocked_rows = "".join(
+            f'<tr><td>{_esc(r["task_id"])} #{r["repeat"]}</td><td><code>{_esc(st["tool"])}'
+            f'({_esc(json.dumps(st["args"]))[:110]})</code></td><td>{st["breaker_p"]:.2f}</td>'
+            f'<td>{"<span class=ok>passed</span>" if r["success"] else "<span class=bad>failed</span>"}</td></tr>'
+            for r in ordered for st in r["steps"] if st.get("blocked"))
+        breaker_html = f"""<h2>Circuit breaker</h2>
+<p class="lead">Before any tool call that changes the world, Jev was asked whether it should run. Calls below
+{meta.get("breaker")} were blocked and the agent was told to verify or ask the user.
+<b>{b["blocked"]}</b> of <b>{b["gated"]}</b> gated calls blocked · median check {b["median_ms"]} ms.</p>
+<div class="panel"><table><tr><th>run</th><th>blocked call</th><th>allow</th><th>run outcome</th></tr>
+{blocked_rows or '<tr><td colspan="4">nothing blocked</td></tr>'}</table></div>"""
     legend = "".join(f'<span><i style="background:{c}"></i>{k}</span>' for k, c in LABEL_COLORS.items())
     return f"""<!doctype html><html><head><meta charset="utf-8"><title>Agent EKG</title>
 <style>
@@ -177,6 +202,7 @@ th{{color:{MUTED};font-weight:500}} tr.sel td{{background:#1a2230;color:#fde68a}
 .card{{background:#111823;border:1px solid {GRID};border-radius:10px;padding:10px 12px}}
 .card-h{{display:flex;justify-content:space-between;font-size:13.5px}} .tid{{font-weight:600}} .rep{{color:{MUTED};font-weight:400}}
 .hard{{margin-left:6px;font-size:11px;padding:1px 6px;border-radius:6px;background:#3b2a12;color:#fbbf24;font-weight:500}}
+.blk{{color:{BREAKER};font-weight:600}}
 .ok{{color:{OK}}} .bad{{color:{BAD}}} .mini{{width:100%;height:auto;display:block;margin:4px 0}}
 .note{{color:{MUTED};font-size:12.5px}} details{{font-size:12.5px;margin-top:4px}} summary{{cursor:pointer;color:{MUTED}}}
 ol{{padding-left:18px;margin:6px 0}} li{{margin:3px 0}} code{{color:#cbd5e1;font-size:11.5px;word-break:break-all}} .p{{color:{MUTED}}}
@@ -190,6 +216,8 @@ ol{{padding-left:18px;margin:6px 0}} li{{margin:3px 0}} code{{color:#cbd5e1;font
 <p class="lead">After each tool call, Jev reads the run so far and answers one question: is this agent still on track?
 <span class="ok">Green</span> runs passed the task's checker, <span class="bad">red</span> runs failed. Jev never sees the checker.</p>
 <div class="panel">{overlay_chart(runs, thr)}</div>
+
+{breaker_html}
 
 <div class="two">
 <div><h2>How early can we tell?</h2>
@@ -208,7 +236,7 @@ At the final answer: <b>{stats["final_auc"] if stats["final_auc"] is None else f
 <tr><td>AUC</td>{auc_rows}</tr></table></div>
 
 <h2>Every run</h2>
-<div class="legend">Jev's label for each step: {legend}<span>· yellow line = monitor stops here</span></div>
+<div class="legend">Jev's label for each step: {legend}<span>· yellow line = monitor stops here</span><span><i style="background:none;border:2px solid {BREAKER};border-radius:0"></i>blocked by breaker</span></div>
 <div class="grid">{"".join(run_card(r, thr) for r in ordered)}</div>
 <div class="foot">Generated by agent-ekg. Pass/fail comes from deterministic checks on the final world state.
 Jev: TypeSafe System One model, ${0.042}/1M input tokens.</div>
