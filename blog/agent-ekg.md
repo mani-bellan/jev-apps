@@ -4,7 +4,7 @@
 
 It is Friday evening. You ask your AI assistant to book the cheapest nonstop flight to Delhi for next Sunday, and go back to packing.
 
-The assistant searches, finds a Vistara flight for ₹6,100, and tries to book it. The airline's system hangs and answers with an error: *gateway timeout, status unknown.* The assistant does what a lot of us would do with a frozen checkout page. It clicks again. This time the booking goes through, and it tells you:
+The assistant searches, finds a nonstop flight for ₹6,100, and tries to book it. The airline's system hangs and answers with an error: *gateway timeout, status unknown.* The assistant does what a lot of us would do with a frozen checkout page. It clicks again. This time the booking goes through, and it tells you:
 
 > *"Your booking has been confirmed. Safe travels!"*
 
@@ -147,7 +147,7 @@ Here is the flaky booking, step by step, without and with the breaker. The color
 
 ![Without the breaker: search, book (timeout), book again, then "confirmed": the run fails because two tickets were bought](https://raw.githubusercontent.com/mani-bellan/jev-apps/main/blog/images/ekg-flaky-plain.png)
 
-*Without the breaker: the agent books, gets a timeout, books again, and reports "confirmed." Two tickets; the run fails.*
+*Without the breaker: the agent books, gets a timeout, books again, and reports "confirmed." Two tickets; the run fails. (Airline names in the agent's messages are replaced with generic labels.)*
 
 ![With the breaker: the second booking is blocked (allow 0.34), the agent lists its bookings, finds the first ticket, and passes](https://raw.githubusercontent.com/mani-bellan/jev-apps/main/blog/images/ekg-flaky-breaker.png)
 
