@@ -7,7 +7,7 @@ decision model.
 - **Customer support router** (`main.py`): routes customer messages to specialist agents.
 - **Agent EKG** ([`agent-eval/`](agent-eval)): an agent evaluation app that scores every step of every
   agent run with Jev, finds where runs derail, and measures how early failing runs can be stopped.
-- **Scam Shield** ([`scam-shield/`](scam-shield)): checks a suspicious SMS or WhatsApp message in under a
+- **Scam Shield** ([`scam-shield/`](scam-shield)): checks a suspicious text or chat message in under a
   second (likely a scam, be careful, or looks genuine) and investigates its links when unsure. Includes 89 real
   messages received in India, collected from public sources, and an evaluation harness.
 

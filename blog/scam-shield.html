@@ -784,7 +784,7 @@ blockquote p{margin:0}
 <header id="top"><h1>A second opinion on scam texts in under a second: Scam Shield, built with Jev</h1>
 <p class="meta">Blog · Security · Scams · Jev · October 20, 2026 · 9 min read · <a href="https://github.com/mani-bellan/jev-apps/tree/main/scam-shield">Source code on GitHub</a></p>
 <p><em>"Dear Customer, your electricity connection will be disconnected tonight at 9:30 PM because your previous month bill was not updated. Please contact our electricity officer 98XXXXXX10 immediately."</em></p>
-<p>If you live in India, you have seen a message like this. Maybe your parents have too, and maybe they called the number. Fake traffic e-challans, parcels "held at the warehouse", KYC updates "or your account will be blocked", part-time jobs that pay you to like YouTube videos. The scripts change every few months. The shape doesn't.</p>
+<p>If you live in India, you have seen a message like this. Maybe your parents have too, and maybe they called the number. Fake traffic e-challans, parcels "held at the warehouse", KYC updates "or your account will be blocked", part-time jobs that pay you to like videos. The scripts change every few months. The shape doesn't.</p>
 <p>I wanted something simple: paste a suspicious message and get a second opinion in under a second. A verdict, the kind of scam, one line on why, and what to do next.</p>
 </header>
 <section id="tl-dr" data-toc="TL;DR">
@@ -799,7 +799,7 @@ blockquote p{margin:0}
 <tbody>
 <tr>
 <td><strong>What I built</strong></td>
-<td>Scam Shield: paste an SMS or WhatsApp message and get <em>likely a scam</em>, <em>be careful</em> or <em>looks genuine</em>, with the kind of scam, the reason and what to do. A command-line tool and a one-page web demo.</td>
+<td>Scam Shield: paste a text or chat message and get <em>likely a scam</em>, <em>be careful</em> or <em>looks genuine</em>, with the kind of scam, the reason and what to do. A command-line tool and a one-page web demo.</td>
 </tr>
 <tr>
 <td><strong>How</strong></td>
@@ -807,7 +807,7 @@ blockquote p{margin:0}
 </tr>
 <tr>
 <td><strong>The data</strong></td>
-<td>89 real messages received in India, collected from public fact-checks, police advisories, news reports and Reddit, including genuine messages that people mistook for scams. Split into a tuning set and a held-out set before any tuning.</td>
+<td>89 real messages received in India, collected from public fact-checks, police advisories, news reports and online forums, including genuine messages that people mistook for scams. Split into a tuning set and a held-out set before any tuning.</td>
 </tr>
 <tr>
 <td><strong>Results</strong></td>
@@ -834,7 +834,7 @@ blockquote p{margin:0}
 <li><strong>Which organisation does it claim to be from?</strong></li>
 </ul>
 <p>A few lines of ordinary code turn those answers into a verdict. At 80% or more it is a scam; at 20% or less it is safe; in between it says "be careful". Those thresholds are a product decision, not a model setting, and keeping them in plain code makes that visible.</p>
-<p>Privacy comes first in the pipeline. Before anything leaves the machine, OTPs, account numbers, card and Aadhaar numbers, and phone numbers are masked. Phone numbers keep their shape (98XXXXXX10), because "asks you to call a personal mobile number" is itself a clue.</p>
+<p>Privacy comes first in the pipeline. Before anything leaves the machine, OTPs, account numbers, card and national ID numbers, and phone numbers are masked. Phone numbers keep their shape (98XXXXXX10), because "asks you to call a personal mobile number" is itself a clue.</p>
 <figure><img alt="How Scam Shield checks a message: mask, Jev quick check, policy, and for unsure messages with links an investigator and a second Jev check" src="images/scam-shield-architecture.png" loading="lazy" /><figcaption>How a message flows through Scam Shield. Grey boxes are plain code, blue boxes are calls to Jev, and the orange box makes network checks. A confident message takes one Jev call; an unsure message with links takes two, plus the link checks.</figcaption></figure>
 </section>
 <section id="the-hard-part-was-data" data-toc="The data">
@@ -842,13 +842,13 @@ blockquote p{margin:0}
 <p>The public "smishing" datasets I found were mostly old UK premium-rate texts ("You have won £1,000, txt CLAIM to 80082"). Useful as a sanity check; nearly useless for today's Indian scams.</p>
 <p>The obvious fix was to export real inboxes. I decided against it: I wasn't willing to risk anyone's personal messages. Instead I collected messages that were already public:</p>
 <ul>
-<li><strong>Fact-checks</strong> that debunk viral messages, such as PIB Fact Check and Vishvas News.</li>
+<li><strong>Fact-checks</strong> that debunk viral messages, run by government agencies and newspapers.</li>
 <li><strong>Police and cybercrime advisories</strong>, which quote the texts going around.</li>
 <li><strong>News reports</strong> quoting messages people received.</li>
-<li><strong>Reddit threads</strong> where someone pastes a message and asks "is this real?"</li>
+<li><strong>Online forum threads</strong> where someone pastes a message and asks "is this real?"</li>
 </ul>
 <p>That last source gave me something I hadn't expected: <strong>genuine messages that looked like scams.</strong> A courier's customs KYC request. A security alert with a short link. An income tax refund notice. A credit card agent asking you to share a reference number. These are exactly the messages a scam checker must not flag, and they are the hardest to find.</p>
-<p>I kept only messages whose full text was printed or shown in a screenshot; anything paraphrased or partial was dropped. That left <strong>89 real received messages</strong>: 68 scams, 19 genuine messages and 2 promotions, each with its source link and date. Bank-written examples, Facebook posts and translations went into a separate, secondary set.</p>
+<p>I kept only messages whose full text was printed or shown in a screenshot; anything paraphrased or partial was dropped. That left <strong>89 real received messages</strong>: 68 scams, 19 genuine messages and 2 promotions, each with its source link and date. Bank-written examples, social media posts and translations went into a separate, secondary set.</p>
 <p>Then, before changing anything, I split the 89 into a <strong>tuning set (53)</strong> and a <strong>held-out set (36)</strong>. Every change was made by looking at the tuning set only. The held-out set was run, never studied.</p>
 <figure><img alt="How accuracy is measured: public sources, labeled sets split into tune and held-out, shield eval with baselines, and an HTML report" src="images/scam-shield-eval.png" loading="lazy" /><figcaption>How the numbers are produced. Every labeled message runs through the full pipeline and two simple baselines, and the report lists every miss and false alarm next to the evidence.</figcaption></figure>
 </section>
@@ -886,7 +886,7 @@ blockquote p{margin:0}
 </tbody>
 </table>
 <p>The middle row is the lesson. A classic text classifier trained on this little data catches every scam because it flags everything that looks like an alert, genuine bank messages included. A scam shield that flags your bank's OTP gets uninstalled in a day. <strong>False alarms are the number that matters</strong>, and Scam Shield had none on the held-out set, or on the tuning set.</p>
-<p>Across all 89 messages, it called only two scams safe, and both are fair misses for a tool that only reads text. One, in the held-out set, was a Hindi WhatsApp message whose real danger was an APK file sent with it; the words alone were harmless. The other was a single line from a task-scam chat ("open Google Maps and search for this hotel") that only looks suspicious once you have read the rest of the conversation.</p>
+<p>Across all 89 messages, it called only two scams safe, and both are fair misses for a tool that only reads text. One, in the held-out set, was a Hindi chat message whose real danger was an APK file sent with it; the words alone were harmless. The other was a single line from a task-scam chat ("open your maps app and search for this hotel") that only looks suspicious once you have read the rest of the conversation.</p>
 </section>
 <section id="following-the-links" data-toc="Following the links">
 <h2>Following the links</h2>
@@ -898,8 +898,8 @@ blockquote p{margin:0}
 <li>reads the landing page for card, OTP or password fields, and notes app (APK) downloads without downloading them.</li>
 </ul>
 <p>Jev then answers "is this a scam?" again, with that evidence in front of it.</p>
-<figure><img alt="The Scam Shield demo checking a courier KYC message: the link lands on the courier's official domain, registered in 1991, and the verdict moves to looks genuine" src="images/scam-shield-demo-fedex.png" loading="lazy" /><figcaption>A genuine courier KYC request. The quick check was unsure (49%); after the investigator confirmed the link lands on the courier's own 35-year-old domain, the chance of a scam dropped to 18%.</figcaption></figure>
-<figure><img alt="The Scam Shield demo checking a parcel message with a shortened link: likely a scam" src="images/scam-shield-demo-parcel.png" loading="lazy" /><figcaption>A real parcel scam. The link is a shortener that no longer resolves, and the message claims to be a courier: likely a scam.</figcaption></figure>
+<figure><img alt="The Scam Shield demo checking a courier KYC message: the link lands on the courier's official domain, registered in 1991, and the verdict moves to looks genuine" src="images/scam-shield-demo-courier.png" loading="lazy" /><figcaption>A genuine courier KYC request. The quick check was unsure (48%); after the investigator confirmed the link lands on the courier's own 35-year-old domain, the chance of a scam dropped to 17%. (Company names and domains in both demo screenshots are replaced with generic labels.)</figcaption></figure>
+<figure><img alt="The Scam Shield demo checking a parcel message with a shortened link: likely a scam" src="images/scam-shield-demo-parcel.png" loading="lazy" /><figcaption>A real parcel scam. The link is a shortener that no longer resolves, and the message claims to be from a courier: likely a scam.</figcaption></figure>
 <p>To be honest about it: on the held-out set, the investigator moved the right numbers in the right direction but didn't change a single verdict. A genuine courier message went from 55% to 23%, just above the "safe" line. Old scam links are mostly dead by the time anyone collects them, so a live deployment would see far more evidence than this evaluation did. On the tuning set it did flip three messages, all correctly: two parcel scams to "scam" and one genuine security alert to "safe".</p>
 </section>
 <section id="what-i-learned" data-toc="What I learned">
@@ -909,7 +909,7 @@ blockquote p{margin:0}
 <li><strong>"Be careful" is a feature.</strong> A tool that says "check this in the official app" is more useful than one that guesses confidently.</li>
 <li><strong>Your own test messages flatter you.</strong> The 47 messages I wrote myself scored 100%. Real ones didn't.</li>
 <li><strong>Public data has a bias.</strong> The scams that make the news are cleaner and more typical than what lands in a real inbox.</li>
-<li><strong>A better list of categories beat clever wording.</strong> Free-recharge forwards ("Ambani is giving every Jio user ₹719 of free recharge") kept getting lumped in with lotteries. Giving them their own category raised scam-type accuracy on the held-out set from 81% to 93%.</li>
+<li><strong>A better list of categories beat clever wording.</strong> Free-recharge forwards ("a famous businessman is giving every phone user ₹719 of free recharge") kept getting lumped in with lotteries. Giving them their own category raised scam-type accuracy on the held-out set from 81% to 93%.</li>
 <li><strong>The next step was blocked by search, not by AI.</strong> I wanted an agent that could look up whether a message's wording is a known scam, or what a company's real helpline is. No free web search works from a server without an API key, so that part waits.</li>
 </ol>
 </section>
