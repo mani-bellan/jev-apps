@@ -1,14 +1,21 @@
 # Jev apps
 
-Three small Python apps built on [Jev](https://docs.typesafe.ai/introduction), TypeSafe AI's
+Four small Python apps built on [Jev](https://docs.typesafe.ai/introduction), TypeSafe AI's
 decision model.
 
 - **Pipeline failure triage** (`triage.py`): decides what to do about a failed data-pipeline task.
 - **Customer support router** (`main.py`): routes customer messages to specialist agents.
 - **Agent EKG** ([`agent-eval/`](agent-eval)): an agent evaluation app that scores every step of every
   agent run with Jev, finds where runs derail, and measures how early failing runs can be stopped.
+- **Scam Shield** ([`scam-shield/`](scam-shield)): checks a suspicious SMS or WhatsApp message in under a
+  second (likely a scam, be careful, or looks genuine) and investigates its links when unsure. Includes 89 real
+  messages received in India, collected from public sources, and an evaluation harness.
 
-Read the write-up: [Triage pipeline failures in 100 ms with Jev](blog/jev-pipeline-triage.md).
+Read the write-ups:
+
+- [Triage pipeline failures in 100 ms with Jev](blog/jev-pipeline-triage.md)
+- [Who's watching your AI agent? A heart monitor and a circuit breaker](blog/agent-ekg.md)
+- [A second opinion on scam texts in under a second: Scam Shield](blog/scam-shield.md)
 
 ## API key
 

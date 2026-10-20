@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A second opinion on scam texts in under a second: Scam Shield, built with Jev</title>
+<style>
+			:root {
+				color-scheme: light dark;
+				--bg: #ffffff;
+				--surface: #f6f7f9;
+				--border: #e1e4ea;
+				--line: #aeb6c4;
+				--text: #1b1f27;
+				--muted: #5d6675;
+				--accent: #2f5fd0;
+				--accent-soft: #eaf0fd;
+				--ok: #1f7a4d;
+				--ok-soft: #e4f4ec;
+				--warn: #8a5a00;
+				--warn-soft: #fdf1d8;
+				--bad: #b3261e;
+				--bad-soft: #fde8e6;
+				--sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+				--mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+			}
+			@media (prefers-color-scheme: dark) {
+				:root {
+					--bg: #14161a;
+					--surface: #1c1f25;
+					--border: #2c313a;
+					--line: #566070;
+					--text: #e7e9ee;
+					--muted: #9ba3b1;
+					--accent: #8fb0ff;
+					--accent-soft: #1e2a47;
+					--ok: #6fd3a0;
+					--ok-soft: #173326;
+					--warn: #f0c36a;
+					--warn-soft: #3a2e12;
+					--bad: #ff9d94;
+					--bad-soft: #401f1c;
+				}
+			}
+			* {
+				box-sizing: border-box;
+			}
+			html {
+				scroll-behavior: smooth;
+			}
+			body {
+				margin: 0;
+				background: var(--bg);
+				color: var(--text);
+				font: 16px/1.55 var(--sans);
+				-webkit-text-size-adjust: 100%;
+			}
+			.layout {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr);
+				max-width: 46rem;
+				margin: 0 auto;
+				/* Bottom space keeps the last block clear of the review button in the corner. */
+				padding: 2.5rem 1.25rem 6rem;
+			}
+			.toc {
+				display: none;
+			}
+			@media (min-width: 64rem) {
+				.layout {
+					grid-template-columns: 13rem minmax(0, 46rem);
+					gap: 3rem;
+					max-width: 64rem;
+				}
+				.toc {
+					display: block;
+					position: sticky;
+					top: 2.5rem;
+					align-self: start;
+					max-height: calc(100vh - 5rem);
+					overflow-y: auto;
+					font-size: 0.875rem;
+				}
+			}
+			.toc ol {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			.toc a {
+				display: block;
+				padding: 0.3rem 0.6rem;
+				border-left: 2px solid var(--border);
+				color: var(--muted);
+				text-decoration: none;
+			}
+			.toc a:hover,
+			.toc a[aria-current='true'] {
+				border-left-color: var(--accent);
+				color: var(--text);
+			}
+			h1,
+			h2,
+			h3 {
+				line-height: 1.25;
+				text-wrap: balance;
+			}
+			h1 {
+				margin: 0.4rem 0 0.75rem;
+				font-size: 2rem;
+				letter-spacing: -0.01em;
+			}
+			h2 {
+				margin: 0 0 0.9rem;
+				font-size: 1.3rem;
+			}
+			h3 {
+				margin: 0;
+				font-size: 1.02rem;
+			}
+			p,
+			ul,
+			ol,
+			dl,
+			figure,
+			pre {
+				margin: 0 0 0.9rem;
+			}
+			a {
+				color: var(--accent);
+			}
+			section {
+				margin-top: 2.75rem;
+			}
+			[id] {
+				scroll-margin-top: 1.5rem;
+			}
+			.kicker,
+			.meta {
+				margin: 0;
+				color: var(--muted);
+				font-size: 0.875rem;
+			}
+			.meta {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem 0.75rem;
+				align-items: center;
+			}
+			.lede {
+				font-size: 1.15rem;
+				color: var(--text);
+			}
+
+			/* Summary: the part every reader sees. */
+			.facts {
+				display: grid;
+				gap: 1px;
+				margin: 0;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				background: var(--border);
+				overflow: hidden;
+			}
+			.facts > div {
+				display: grid;
+				grid-template-columns: 8.5rem minmax(0, 1fr);
+				gap: 1rem;
+				padding: 0.7rem 1rem;
+				background: var(--surface);
+			}
+			.facts dt {
+				color: var(--muted);
+				font-size: 0.875rem;
+				font-weight: 600;
+			}
+			.facts dd {
+				margin: 0;
+			}
+			/* The first row is what the reader is asked to do, so it stands out from the rest. */
+			.facts > .ask {
+				background: var(--accent-soft);
+			}
+			.facts > .ask dt {
+				color: var(--accent);
+			}
+			@media (max-width: 34rem) {
+				h1 {
+					font-size: 1.6rem;
+				}
+				.facts > div {
+					grid-template-columns: minmax(0, 1fr);
+					gap: 0.15rem;
+				}
+			}
+
+			/* Items: one decision, step, or alternative per block, so one comment hits one thing. */
+			.items {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				display: grid;
+				gap: 0.75rem;
+			}
+			.item {
+				padding: 0.9rem 1rem;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+			}
+			.item > :last-child {
+				margin-bottom: 0;
+			}
+			.item-head {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem 0.6rem;
+				align-items: center;
+				margin-bottom: 0.5rem;
+			}
+			.item-head h3 {
+				flex: 1 1 12rem;
+			}
+			.tag {
+				padding: 0.05rem 0.4rem;
+				border-radius: 5px;
+				background: var(--accent-soft);
+				color: var(--accent);
+				font: 600 0.8rem/1.5 var(--mono);
+				white-space: nowrap;
+			}
+			:target {
+				outline: 2px solid var(--accent);
+				outline-offset: 3px;
+				border-radius: 10px;
+			}
+			.chip {
+				display: inline-block;
+				padding: 0.05rem 0.55rem;
+				border-radius: 999px;
+				background: var(--surface);
+				border: 1px solid var(--border);
+				color: var(--muted);
+				font-size: 0.78rem;
+				font-weight: 600;
+				white-space: nowrap;
+			}
+			.chip.review,
+			.chip.doing {
+				background: var(--warn-soft);
+				border-color: transparent;
+				color: var(--warn);
+			}
+			.chip.done,
+			.chip.pick {
+				background: var(--ok-soft);
+				border-color: transparent;
+				color: var(--ok);
+			}
+			.chip.blocked {
+				background: var(--bad-soft);
+				border-color: transparent;
+				color: var(--bad);
+			}
+			.options {
+				padding-left: 1.2rem;
+				list-style: disc;
+			}
+			.options li {
+				margin-bottom: 0.3rem;
+			}
+			.detail {
+				display: grid;
+				grid-template-columns: 4.5rem minmax(0, 1fr);
+				gap: 0.25rem 0.75rem;
+				font-size: 0.92rem;
+			}
+			.detail dt {
+				color: var(--muted);
+				font-weight: 600;
+			}
+			.detail dd {
+				margin: 0;
+			}
+			.quiet {
+				color: var(--muted);
+				font-size: 0.92rem;
+			}
+
+			.note {
+				margin: 0 0 0.9rem;
+				padding: 0.75rem 1rem;
+				border-left: 3px solid var(--accent);
+				border-radius: 0 8px 8px 0;
+				background: var(--accent-soft);
+			}
+			.note.warn {
+				border-left-color: var(--warn);
+				background: var(--warn-soft);
+			}
+			.note > :last-child {
+				margin-bottom: 0;
+			}
+
+			.table-wrap {
+				margin: 0 0 0.9rem;
+				overflow-x: auto;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+			}
+			table {
+				width: 100%;
+				/* On a phone the table scrolls sideways instead of squeezing its columns. */
+				min-width: 34rem;
+				border-collapse: collapse;
+				font-size: 0.92rem;
+			}
+			th,
+			td {
+				padding: 0.55rem 0.8rem;
+				border-bottom: 1px solid var(--border);
+				text-align: left;
+				vertical-align: top;
+			}
+			th {
+				background: var(--surface);
+				color: var(--muted);
+				font-size: 0.82rem;
+			}
+			tr:last-child td {
+				border-bottom: 0;
+			}
+			td:has(> .tag:only-child) {
+				width: 1%;
+				white-space: nowrap;
+			}
+
+			code {
+				padding: 0.1em 0.3em;
+				border-radius: 4px;
+				background: var(--surface);
+				font: 0.88em var(--mono);
+				overflow-wrap: anywhere;
+			}
+			pre {
+				padding: 0.8rem 1rem;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				background: var(--surface);
+				overflow-x: auto;
+				font: 0.84rem/1.45 var(--mono);
+			}
+			pre code {
+				padding: 0;
+				background: none;
+				font: inherit;
+				overflow-wrap: normal;
+			}
+			/* Box-drawing diagrams need tight lines, or the vertical strokes show gaps. */
+			figure pre {
+				line-height: 1.2;
+			}
+			/* Before and After side by side; the panes stack when the page is narrow. */
+			.compare {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+				gap: 0.75rem;
+				margin: 0 0 0.9rem;
+			}
+			.compare > div {
+				min-width: 0;
+			}
+			.compare pre {
+				margin: 0;
+			}
+			.pane {
+				margin: 0 0 0.3rem;
+				color: var(--muted);
+				font-size: 0.82rem;
+				font-weight: 600;
+			}
+			/* The script at the end of the page adds these classes. */
+			pre .hot {
+				color: var(--accent);
+			}
+			.line {
+				display: block;
+			}
+			.line.add {
+				background: var(--ok-soft);
+				color: var(--ok);
+			}
+			.line.del {
+				background: var(--bad-soft);
+				color: var(--bad);
+			}
+			/* Visuals. .viz frames one picture. .flow, .parts, and .bars are ready-made pictures. */
+			.viz {
+				container-type: inline-size;
+				padding: 1.1rem 1rem;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				background: var(--surface);
+				overflow-x: auto;
+			}
+			.viz > :last-child {
+				margin-bottom: 0;
+			}
+			.viz svg {
+				margin: 0 auto;
+				color: var(--text);
+				font-family: var(--sans);
+			}
+			.compare > div {
+				display: flex;
+				flex-direction: column;
+			}
+			.compare .viz {
+				flex: 1;
+			}
+
+			/* A flow: nodes joined by edges, top to bottom. */
+			.flow {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
+			.node {
+				min-width: 6.5rem;
+				max-width: 100%;
+				padding: 0.45rem 0.85rem;
+				border: 1.5px solid var(--line);
+				border-radius: 8px;
+				background: var(--bg);
+				font-size: 0.92rem;
+				font-weight: 600;
+				line-height: 1.3;
+				text-align: center;
+			}
+			.node small {
+				display: block;
+				margin-top: 0.15rem;
+				color: var(--muted);
+				font-size: 0.8rem;
+				font-weight: 400;
+			}
+			.node.hot {
+				border-color: var(--accent);
+				background: var(--accent-soft);
+			}
+			.node.ok {
+				border-color: var(--ok);
+				background: var(--ok-soft);
+			}
+			.node.bad {
+				border-color: var(--bad);
+				background: var(--bad-soft);
+			}
+			.node.gone {
+				border-style: dashed;
+				background: none;
+				color: var(--muted);
+			}
+			/* The line is a background, the arrowhead is ::after, and ::before is the moving dot. */
+			.edge {
+				position: relative;
+				align-self: stretch;
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+				column-gap: 1.2rem;
+				min-height: 2.5rem;
+				margin: 2px 0;
+				color: var(--line);
+				background: linear-gradient(currentColor, currentColor) top center / 1.5px calc(100% - 5px)
+					no-repeat;
+			}
+			.edge::after {
+				content: '';
+				position: absolute;
+				left: 50%;
+				bottom: 0;
+				translate: -50% 0;
+				border: 5px solid transparent;
+				border-top: 7px solid currentColor;
+				border-bottom-width: 0;
+			}
+			.edge > span {
+				grid-column: 2;
+				align-self: center;
+				padding: 0.4rem 0 0.6rem;
+				color: var(--muted);
+				font-size: 0.8rem;
+				line-height: 1.25;
+			}
+			.edge.hot,
+			.edge.hot > span {
+				color: var(--accent);
+			}
+			/* Nodes that belong together or run in parallel. */
+			.group {
+				position: relative;
+				display: flex;
+				flex-wrap: wrap;
+				align-items: flex-start;
+				justify-content: center;
+				gap: 0.5rem;
+				max-width: 100%;
+				padding: 1.7rem 0.6rem 0.6rem;
+				border: 1.5px dashed var(--line);
+				border-radius: 10px;
+			}
+			.group::before {
+				content: attr(data-label);
+				position: absolute;
+				top: 0.35rem;
+				left: 0.7rem;
+				color: var(--muted);
+				font-size: 0.75rem;
+				font-weight: 600;
+			}
+			/* Left to right, when the picture is wide enough. */
+			@container (min-width: 34rem) {
+				.flow.row {
+					flex-direction: row;
+					justify-content: center;
+				}
+				.flow.row > .edge {
+					align-self: center;
+					flex: 1 1 3rem;
+					min-width: 3rem;
+					max-width: 10rem;
+					grid-template-columns: minmax(0, 1fr);
+					grid-template-rows: 1fr 1fr;
+					min-height: 2.6rem;
+					margin: 0 2px;
+					background-position: left center;
+					background-size: calc(100% - 5px) 1.5px;
+				}
+				.flow.row > .edge::after {
+					left: auto;
+					right: 0;
+					bottom: auto;
+					top: 50%;
+					translate: 0 -50%;
+					border: 5px solid transparent;
+					border-left: 7px solid currentColor;
+					border-right-width: 0;
+				}
+				.flow.row > .edge > span {
+					grid-column: 1;
+					grid-row: 1;
+					align-self: end;
+					padding: 0 0.6rem 0.3rem 0.2rem;
+					text-align: center;
+				}
+				.flow.row > .group {
+					flex-direction: column;
+					align-items: stretch;
+				}
+			}
+
+			/* One text split into labelled parts. */
+			.parts {
+				display: grid;
+				gap: 0.5rem;
+			}
+			.parts > div {
+				display: grid;
+				grid-template-columns: 8.5rem minmax(0, 1fr);
+				gap: 0.75rem;
+				align-items: start;
+			}
+			.parts dt {
+				padding-top: 0.55rem;
+				color: var(--muted);
+				font-size: 0.8rem;
+				font-weight: 600;
+			}
+			.parts dd {
+				margin: 0;
+				padding: 0.5rem 0.8rem;
+				border: 1.5px solid var(--line);
+				border-radius: 8px;
+				background: var(--bg);
+				font-size: 0.92rem;
+			}
+			.parts.code dd {
+				font: 0.84rem/1.5 var(--mono);
+				white-space: pre-wrap;
+				overflow-wrap: anywhere;
+			}
+			.parts > .hot dt {
+				color: var(--accent);
+			}
+			.parts > .hot dd {
+				border-color: var(--accent);
+				background: var(--accent-soft);
+			}
+			@container (max-width: 26rem) {
+				.parts > div {
+					grid-template-columns: minmax(0, 1fr);
+					gap: 0.15rem;
+				}
+				.parts dt {
+					padding-top: 0;
+				}
+			}
+
+			/* Bars: --v on each row is its length in percent of the longest bar. */
+			.bars {
+				display: grid;
+				grid-template-columns: auto minmax(3rem, 1fr) auto;
+				gap: 0.45rem 0.7rem;
+				padding: 0;
+				list-style: none;
+				font-size: 0.9rem;
+			}
+			.bars li {
+				display: grid;
+				grid-column: 1 / -1;
+				grid-template-columns: subgrid;
+				align-items: center;
+			}
+			.bars li::after {
+				content: '';
+				grid-column: 2;
+				grid-row: 1;
+				width: calc(var(--v, 0) * 1%);
+				min-width: 2px;
+				height: 0.85rem;
+				border-radius: 3px;
+				background: var(--line);
+				/* A script that changes --v gets a smooth change. */
+				transition: width 0.25s ease-out;
+			}
+			.bars li > span {
+				grid-column: 1;
+				max-width: 11rem;
+			}
+			.bars li > b {
+				grid-column: 3;
+				font: 600 0.84rem var(--mono);
+			}
+			.bars li.hot::after {
+				background: var(--accent);
+			}
+			.bars li.hot > b {
+				color: var(--accent);
+			}
+
+			/* Motion. Every picture is complete when it stands still: in print, in a screenshot, and
+			   for a reader who turned motion off. */
+			@media screen and (prefers-reduced-motion: no-preference) {
+				/* A dot travels along a live edge. Use it for the path that the data takes. */
+				.edge.live::before {
+					content: '';
+					position: absolute;
+					left: 50%;
+					top: 0;
+					width: 7px;
+					height: 7px;
+					margin: -3.5px;
+					border-radius: 50%;
+					background: var(--accent);
+					animation: travel-down 1.8s linear infinite;
+				}
+				@keyframes travel-down {
+					0% {
+						top: 0;
+						opacity: 0;
+					}
+					15%,
+					80% {
+						opacity: 1;
+					}
+					100% {
+						top: calc(100% - 6px);
+						opacity: 0;
+					}
+				}
+				@container (min-width: 34rem) {
+					.flow.row > .edge.live::before {
+						left: 0;
+						top: 50%;
+						animation-name: travel-right;
+					}
+				}
+				@keyframes travel-right {
+					0% {
+						left: 0;
+						opacity: 0;
+					}
+					15%,
+					80% {
+						opacity: 1;
+					}
+					100% {
+						left: calc(100% - 6px);
+						opacity: 0;
+					}
+				}
+				/* The script at the end of the page adds .play when the figure scrolls into view. */
+				.play .seq > * {
+					animation: appear 0.45s ease-out both;
+					animation-delay: calc(var(--i, 0) * 0.3s);
+				}
+				.play .bars li::after {
+					transform-origin: left;
+					animation: grow 0.8s ease-out both;
+				}
+				@keyframes appear {
+					from {
+						opacity: 0;
+						transform: translateY(-6px);
+					}
+				}
+				@keyframes grow {
+					from {
+						transform: scaleX(0);
+					}
+				}
+			}
+			.replay {
+				margin-left: 0.5rem;
+				padding: 0;
+				border: 0;
+				background: none;
+				color: var(--accent);
+				font: inherit;
+				text-decoration: underline;
+				cursor: pointer;
+			}
+			@media print {
+				.replay {
+					display: none;
+				}
+			}
+			figure svg,
+			figure img {
+				display: block;
+				max-width: 100%;
+				height: auto;
+			}
+			figcaption {
+				margin-top: 0.4rem;
+				color: var(--muted);
+				font-size: 0.875rem;
+			}
+			details {
+				margin: 0 0 0.6rem;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+			}
+			summary {
+				padding: 0.6rem 1rem;
+				cursor: pointer;
+				font-weight: 600;
+			}
+			details > :not(summary) {
+				margin-left: 1rem;
+				margin-right: 1rem;
+			}
+			@media print {
+				.toc {
+					display: none;
+				}
+				.layout {
+					display: block;
+					max-width: none;
+					padding: 0;
+				}
+			}
+		</style>
+<style>
+figure img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--border)}
+figure figcaption{color:var(--muted);font-size:.9rem;margin-top:.5rem}
+blockquote{margin:1rem 0;padding:.6rem 1rem;border-left:3px solid var(--accent);background:var(--surface);border-radius:0 8px 8px 0}
+blockquote p{margin:0}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" aria-label="Contents"></nav>
+<main>
+<header id="top"><h1>A second opinion on scam texts in under a second: Scam Shield, built with Jev</h1>
+<p class="meta">Blog · Security · Scams · Jev · October 20, 2026 · 9 min read · <a href="https://github.com/mani-bellan/jev-apps/tree/main/scam-shield">Source code on GitHub</a></p>
+<p><em>"Dear Customer, your electricity connection will be disconnected tonight at 9:30 PM because your previous month bill was not updated. Please contact our electricity officer 98XXXXXX10 immediately."</em></p>
+<p>If you live in India, you have seen a message like this. Maybe your parents have too, and maybe they called the number. Fake traffic e-challans, parcels "held at the warehouse", KYC updates "or your account will be blocked", part-time jobs that pay you to like YouTube videos. The scripts change every few months. The shape doesn't.</p>
+<p>I wanted something simple: paste a suspicious message and get a second opinion in under a second. A verdict, the kind of scam, one line on why, and what to do next.</p>
+</header>
+<section id="tl-dr" data-toc="TL;DR">
+<h2>TL;DR</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>What I built</strong></td>
+<td>Scam Shield: paste an SMS or WhatsApp message and get <em>likely a scam</em>, <em>be careful</em> or <em>looks genuine</em>, with the kind of scam, the reason and what to do. A command-line tool and a one-page web demo.</td>
+</tr>
+<tr>
+<td><strong>How</strong></td>
+<td>One call to Jev, TypeSafe's judgment model, answers five questions about the message. Plain code turns the answers into a verdict. When it is unsure and the message has links, an investigator checks where the links really go, and Jev looks again with that evidence.</td>
+</tr>
+<tr>
+<td><strong>The data</strong></td>
+<td>89 real messages received in India, collected from public fact-checks, police advisories, news reports and Reddit, including genuine messages that people mistook for scams. Split into a tuning set and a held-out set before any tuning.</td>
+</tr>
+<tr>
+<td><strong>Results</strong></td>
+<td>On the 36 held-out messages: <strong>93% of scams caught, no genuine message called a scam</strong>, 11% left as "be careful". A classic text classifier caught every scam but also flagged every genuine message.</td>
+</tr>
+<tr>
+<td><strong>Cost</strong></td>
+<td>About 70 ms and roughly $7.50 per 100,000 messages for the quick check.</td>
+</tr>
+</tbody>
+</table>
+<p>This is a small, exploratory project. The limits are spelled out at the end.</p>
+</section>
+<section id="a-model-that-judges-instead-of-writes" data-toc="Why Jev">
+<h2>A model that judges instead of writes</h2>
+<p>Most AI tools write: answers, emails, code. A scam checker doesn't need to write anything. It needs to make a few judgments, very quickly, about a very large number of messages: is this a scam, what kind, what does it want from me?</p>
+<p>That is what Jev does. Jev is TypeSafe's "System One" model. You give it some text and a few typed questions, and it returns an answer to each with a probability. It never generates prose. It answers in about 70 milliseconds and costs $0.042 per million input tokens.</p>
+<p>Every message gets one Jev call with five questions:</p>
+<ul>
+<li><strong>Is this a scam?</strong> A yes/no answer as a probability.</li>
+<li><strong>What kind?</strong> One of 13 Indian scam patterns (KYC block, bill disconnection, e-challan, parcel, job task, loan, investment, lottery, refund, reward points, impersonation, OTP request, free-recharge "schemes"), or genuine alert, genuine promotion, personal chat or "unclear".</li>
+<li><strong>What does it ask you to do?</strong> Open a link, call a number, share an OTP, pay, install an app, reply, or nothing.</li>
+<li><strong>How much pressure does it put on you?</strong></li>
+<li><strong>Which organisation does it claim to be from?</strong></li>
+</ul>
+<p>A few lines of ordinary code turn those answers into a verdict. At 80% or more it is a scam; at 20% or less it is safe; in between it says "be careful". Those thresholds are a product decision, not a model setting, and keeping them in plain code makes that visible.</p>
+<p>Privacy comes first in the pipeline. Before anything leaves the machine, OTPs, account numbers, card and Aadhaar numbers, and phone numbers are masked. Phone numbers keep their shape (98XXXXXX10), because "asks you to call a personal mobile number" is itself a clue.</p>
+<figure><img alt="How Scam Shield checks a message: mask, Jev quick check, policy, and for unsure messages with links an investigator and a second Jev check" src="images/scam-shield-architecture.png" loading="lazy" /><figcaption>How a message flows through Scam Shield. Grey boxes are plain code, blue boxes are calls to Jev, and the orange box makes network checks. A confident message takes one Jev call; an unsure message with links takes two, plus the link checks.</figcaption></figure>
+</section>
+<section id="the-hard-part-was-data" data-toc="The data">
+<h2>The hard part was data</h2>
+<p>The public "smishing" datasets I found were mostly old UK premium-rate texts ("You have won £1,000, txt CLAIM to 80082"). Useful as a sanity check; nearly useless for today's Indian scams.</p>
+<p>The obvious fix was to export real inboxes. I decided against it: I wasn't willing to risk anyone's personal messages. Instead I collected messages that were already public:</p>
+<ul>
+<li><strong>Fact-checks</strong> that debunk viral messages, such as PIB Fact Check and Vishvas News.</li>
+<li><strong>Police and cybercrime advisories</strong>, which quote the texts going around.</li>
+<li><strong>News reports</strong> quoting messages people received.</li>
+<li><strong>Reddit threads</strong> where someone pastes a message and asks "is this real?"</li>
+</ul>
+<p>That last source gave me something I hadn't expected: <strong>genuine messages that looked like scams.</strong> A courier's customs KYC request. A security alert with a short link. An income tax refund notice. A credit card agent asking you to share a reference number. These are exactly the messages a scam checker must not flag, and they are the hardest to find.</p>
+<p>I kept only messages whose full text was printed or shown in a screenshot; anything paraphrased or partial was dropped. That left <strong>89 real received messages</strong>: 68 scams, 19 genuine messages and 2 promotions, each with its source link and date. Bank-written examples, Facebook posts and translations went into a separate, secondary set.</p>
+<p>Then, before changing anything, I split the 89 into a <strong>tuning set (53)</strong> and a <strong>held-out set (36)</strong>. Every change was made by looking at the tuning set only. The held-out set was run, never studied.</p>
+<figure><img alt="How accuracy is measured: public sources, labeled sets split into tune and held-out, shield eval with baselines, and an HTML report" src="images/scam-shield-eval.png" loading="lazy" /><figcaption>How the numbers are produced. Every labeled message runs through the full pipeline and two simple baselines, and the report lists every miss and false alarm next to the evidence.</figcaption></figure>
+</section>
+<section id="results" data-toc="Results">
+<h2>Results</h2>
+<p>On the 36 held-out messages:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Scams caught</th>
+<th>Genuine messages called scams</th>
+<th>Left as "be careful"</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Scam Shield (Jev)</strong></td>
+<td><strong>93%</strong> (25 of 27)</td>
+<td><strong>0 of 8</strong></td>
+<td>11%</td>
+</tr>
+<tr>
+<td>Text classifier (TF-IDF)</td>
+<td>100%</td>
+<td>8 of 8</td>
+<td>–</td>
+</tr>
+<tr>
+<td>Keyword rules</td>
+<td>48%</td>
+<td>0 of 8</td>
+<td>–</td>
+</tr>
+</tbody>
+</table>
+<p>The middle row is the lesson. A classic text classifier trained on this little data catches every scam because it flags everything that looks like an alert, genuine bank messages included. A scam shield that flags your bank's OTP gets uninstalled in a day. <strong>False alarms are the number that matters</strong>, and Scam Shield had none on the held-out set, or on the tuning set.</p>
+<p>Across all 89 messages, it called only two scams safe, and both are fair misses for a tool that only reads text. One, in the held-out set, was a Hindi WhatsApp message whose real danger was an APK file sent with it; the words alone were harmless. The other was a single line from a task-scam chat ("open Google Maps and search for this hotel") that only looks suspicious once you have read the rest of the conversation.</p>
+</section>
+<section id="following-the-links" data-toc="Following the links">
+<h2>Following the links</h2>
+<p>Most "be careful" messages contain a link, and a link can be checked. So I added an investigator. When the quick check is unsure, it opens each link from the server (never from your phone) and:</p>
+<ul>
+<li>follows redirects and link shorteners to where the link really lands;</li>
+<li>checks who owns that domain: the organisation the message claims to be from, a government or bank-only domain (.gov.in, .nic.in, .bank.in), some other company, or a link shortener anyone can use;</li>
+<li>looks up when the domain was registered (a week-old "bank" site is a red flag);</li>
+<li>reads the landing page for card, OTP or password fields, and notes app (APK) downloads without downloading them.</li>
+</ul>
+<p>Jev then answers "is this a scam?" again, with that evidence in front of it.</p>
+<figure><img alt="The Scam Shield demo checking a courier KYC message: the link lands on the courier's official domain, registered in 1991, and the verdict moves to looks genuine" src="images/scam-shield-demo-fedex.png" loading="lazy" /><figcaption>A genuine courier KYC request. The quick check was unsure (49%); after the investigator confirmed the link lands on the courier's own 35-year-old domain, the chance of a scam dropped to 18%.</figcaption></figure>
+<figure><img alt="The Scam Shield demo checking a parcel message with a shortened link: likely a scam" src="images/scam-shield-demo-parcel.png" loading="lazy" /><figcaption>A real parcel scam. The link is a shortener that no longer resolves, and the message claims to be a courier: likely a scam.</figcaption></figure>
+<p>To be honest about it: on the held-out set, the investigator moved the right numbers in the right direction but didn't change a single verdict. A genuine courier message went from 55% to 23%, just above the "safe" line. Old scam links are mostly dead by the time anyone collects them, so a live deployment would see far more evidence than this evaluation did. On the tuning set it did flip three messages, all correctly: two parcel scams to "scam" and one genuine security alert to "safe".</p>
+</section>
+<section id="what-i-learned" data-toc="What I learned">
+<h2>What I learned</h2>
+<ol>
+<li><strong>Decide which mistake is worse before you measure anything.</strong> Here it is false alarms. That one decision changed which method looked best.</li>
+<li><strong>"Be careful" is a feature.</strong> A tool that says "check this in the official app" is more useful than one that guesses confidently.</li>
+<li><strong>Your own test messages flatter you.</strong> The 47 messages I wrote myself scored 100%. Real ones didn't.</li>
+<li><strong>Public data has a bias.</strong> The scams that make the news are cleaner and more typical than what lands in a real inbox.</li>
+<li><strong>A better list of categories beat clever wording.</strong> Free-recharge forwards ("Ambani is giving every Jio user ₹719 of free recharge") kept getting lumped in with lotteries. Giving them their own category raised scam-type accuracy on the held-out set from 81% to 93%.</li>
+<li><strong>The next step was blocked by search, not by AI.</strong> I wanted an agent that could look up whether a message's wording is a known scam, or what a company's real helpline is. No free web search works from a server without an API key, so that part waits.</li>
+</ol>
+</section>
+<section id="limits" data-toc="Limits">
+<h2>Limits</h2>
+<ul>
+<li><strong>Text only.</strong> No screenshots, attachments or voice calls, so an APK sent as a file or a "digital arrest" call isn't covered.</li>
+<li><strong>Not in your inbox.</strong> You paste or forward the message; it doesn't read or block anything on your phone.</li>
+<li><strong>Phone-only scams often stay at "be careful".</strong> "Call officer 98…" has no link to check, and there is no free way to look up a number.</li>
+<li><strong>Small test set.</strong> 36 held-out messages, only 8 of them genuine, and few in Hindi or Hinglish. One more false alarm would move the rate by 12 points. Treat 93% as a promising start, not a proven rate.</li>
+</ul>
+</section>
+<section id="try-it" data-toc="Try it">
+<h2>Try it</h2>
+<figure><pre><code>git clone https://github.com/mani-bellan/jev-apps &amp;&amp; cd jev-apps/scam-shield
+export TYPESAFE_API_KEY=...   # from https://console.typesafe.ai/keys
+
+uv run shield check &quot;Your electricity will be disconnected tonight. Call officer 9876543210&quot;
+uv run shield serve --port 8000                 # the web demo
+uv run shield eval data/public_india_heldout.jsonl
+</code></pre></figure>
+<p>The repository includes the labeled public messages with their sources, the evaluation harness with both baselines, and a labeling tool that masks private numbers before saving, if you want to test it on messages of your own.</p></section>
+</main>
+</div>
+<script>
+			// Builds the side contents list from the sections, so it cannot drift from the page.
+			const toc = document.querySelector('.toc')
+			const sections = [...document.querySelectorAll('main > section[id]')]
+			const list = document.createElement('ol')
+			const links = new Map()
+			for (const section of sections) {
+				const label = section.dataset.toc || section.querySelector('h2')?.textContent.trim()
+				if (!label) continue
+				const link = document.createElement('a')
+				link.href = `#${section.id}`
+				link.textContent = label
+				const count = section.querySelectorAll('.item, tbody > tr[id]').length
+				if (count > 0) link.textContent += ` (${count})`
+				links.set(section, link)
+				const entry = document.createElement('li')
+				entry.append(link)
+				list.append(entry)
+			}
+			toc.append(list)
+			const observer = new IntersectionObserver(
+				(entries) => {
+					for (const entry of entries) {
+						if (!entry.isIntersecting) continue
+						for (const link of links.values()) link.removeAttribute('aria-current')
+						links.get(entry.target)?.setAttribute('aria-current', 'true')
+					}
+				},
+				{ rootMargin: '0px 0px -70% 0px' },
+			)
+			for (const section of links.keys()) observer.observe(section)
+
+			// A line break before the end tag of a view would show as an empty last line.
+			for (const pre of document.querySelectorAll('figure pre')) {
+				const last = pre.lastChild
+				if (last?.nodeType === Node.TEXT_NODE) last.data = last.data.trimEnd()
+			}
+
+			// Colors the heavy glyphs in a drawing, so the changed parts stand out from the light lines.
+			const heavy = /([━┃┏┓┗┛┣┫┳┻╋▶◀▲▼●◆■]+)/
+			for (const pre of document.querySelectorAll('pre.diagram')) {
+				const walker = document.createTreeWalker(pre, NodeFilter.SHOW_TEXT)
+				const texts = []
+				while (walker.nextNode()) texts.push(walker.currentNode)
+				for (const text of texts) {
+					const parts = text.data.split(heavy)
+					if (parts.length === 1) continue
+					const pieces = parts.map((part, index) => {
+						if (index % 2 === 0) return part
+						const span = document.createElement('span')
+						span.className = 'hot'
+						span.textContent = part
+						return span
+					})
+					text.replaceWith(...pieces)
+				}
+			}
+
+			// Colors the added and removed lines in a diff view. The view holds text only.
+			for (const pre of document.querySelectorAll('pre.diff')) {
+				const lines = pre.textContent.split('\n').map((line) => {
+					const span = document.createElement('span')
+					span.className = line.startsWith('+') ? 'line add' : line.startsWith('-') ? 'line del' : 'line'
+					span.textContent = line === '' ? ' ' : line
+					return span
+				})
+				pre.replaceChildren(...lines)
+			}
+
+			// Plays the one-shot motion of a picture when it scrolls into view, and adds a Replay
+			// button. Without this script the pictures are complete and still.
+			if (matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+				const play = new IntersectionObserver((entries) => {
+					for (const entry of entries) {
+						if (!entry.isIntersecting) continue
+						entry.target.classList.add('play')
+						play.unobserve(entry.target)
+					}
+				})
+				for (const figure of document.querySelectorAll('figure')) {
+					if (!figure.querySelector('.seq, .bars')) continue
+					for (const sequence of figure.querySelectorAll('.seq')) {
+						;[...sequence.children].forEach((child, index) => child.style.setProperty('--i', index))
+					}
+					play.observe(figure)
+					// A picture with its own controls needs no Replay button.
+					if (figure.querySelector('input, select, button')) continue
+					const button = document.createElement('button')
+					button.type = 'button'
+					button.className = 'replay'
+					button.textContent = 'Replay'
+					button.addEventListener('click', () => {
+						figure.classList.remove('play')
+						void figure.offsetWidth
+						figure.classList.add('play')
+					})
+					const caption = figure.querySelector('figcaption') ?? figure
+					caption.append(button)
+				}
+			}
+		</script>
+</body>
+</html>

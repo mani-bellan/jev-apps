@@ -8,3 +8,5 @@ dbt_demo/logs/
 dbt_demo/*.duckdb*
 dbt_demo/.user.yml
 agent-eval/results/
+scam-shield/results/
+scam-shield/data/cache/

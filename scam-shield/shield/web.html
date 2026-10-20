@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scam Shield</title>
+<style>
+  :root { --ink:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --bg:#f6f7f9; --card:#fff;
+          --scam:#c62828; --scam-bg:#fdecea; --unsure:#9a6700; --unsure-bg:#fff6d6; --safe:#1a7f37; --safe-bg:#e6f6ea; }
+  * { box-sizing:border-box }
+  body { margin:0; font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--ink); background:var(--bg) }
+  main { max-width:720px; margin:0 auto; padding:28px 16px 48px }
+  h1 { font-size:24px; margin:0 0 2px; display:flex; align-items:center; gap:8px }
+  .sub { color:var(--muted); margin:0 0 18px }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px }
+  label { display:block; font-weight:600; font-size:13px; margin:0 0 6px }
+  textarea, input { width:100%; font:inherit; border:1px solid #cfd4da; border-radius:8px; padding:10px 12px; background:#fff }
+  textarea { min-height:120px; resize:vertical }
+  textarea:focus, input:focus { outline:2px solid #2f6feb33; border-color:#2f6feb }
+  .row { display:flex; gap:12px; margin-top:12px; align-items:end; flex-wrap:wrap }
+  .row > div { flex:1 1 220px }
+  button { font:inherit; font-weight:600; border:0; border-radius:8px; padding:10px 18px; cursor:pointer }
+  #go { background:#1f6feb; color:#fff; flex:0 0 auto } #go:hover { background:#1a5fd0 } #go:disabled { background:#8aa9e6; cursor:wait }
+  .examples { margin-top:14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center }
+  .examples span { color:var(--muted); font-size:13px }
+  .chip { background:#eef1f4; color:var(--ink); font-weight:500; font-size:13px; padding:5px 10px; border-radius:999px }
+  .chip:hover { background:#e2e7ec }
+  #result { margin-top:16px }
+  .verdict { display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:12px; border:1px solid }
+  .verdict.scam { background:var(--scam-bg); border-color:#f3b8b3; color:var(--scam) }
+  .verdict.unsure { background:var(--unsure-bg); border-color:#ecd48a; color:var(--unsure) }
+  .verdict.safe { background:var(--safe-bg); border-color:#a8dbb5; color:var(--safe) }
+  .verdict .icon { font-size:30px; line-height:1 }
+  .verdict .title { font-size:20px; font-weight:700 }
+  .verdict .prob { font-size:13px; opacity:.9 }
+  .meter { height:6px; background:#0000000f; border-radius:3px; margin-top:6px; overflow:hidden; width:220px; max-width:100% }
+  .meter i { display:block; height:100%; background:currentColor }
+  .block { margin-top:12px }
+  .block h3 { font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:0 0 4px }
+  .facts { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px }
+  .fact { background:#f2f4f6; border-radius:6px; padding:3px 8px; font-size:13px }
+  .link { border-top:1px solid var(--line); padding:10px 0 }
+  .link:first-of-type { border-top:0 }
+  .link code { font-size:13px; word-break:break-all }
+  .link ul { margin:4px 0 0; padding-left:18px; color:var(--muted); font-size:14px }
+  .masked { white-space:pre-wrap; background:#f6f8fa; border-radius:8px; padding:8px 10px; font-size:14px; color:var(--muted) }
+  .foot { color:var(--muted); font-size:12px; margin-top:14px }
+  .error { color:var(--scam); background:var(--scam-bg); border-radius:8px; padding:10px 12px }
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid #fff8; border-top-color:#fff; border-radius:50%;
+             animation:spin .7s linear infinite; vertical-align:-2px; margin-right:6px }
+  @keyframes spin { to { transform:rotate(360deg) } }
+</style>
+<main>
+  <h1>🛡️ Scam Shield</h1>
+  <p class="sub">Paste a suspicious SMS or WhatsApp message to check whether it is a scam.</p>
+
+  <div class="card">
+    <label for="text">Message</label>
+    <textarea id="text" placeholder="Paste the message here…"></textarea>
+    <div class="row">
+      <div>
+        <label for="sender">Sender (optional)</label>
+        <input id="sender" placeholder="e.g. VM-HDFCBK-S or +91 98765 43210">
+      </div>
+      <button id="go">Check message</button>
+    </div>
+    <div class="examples">
+      <span>Try:</span>
+      <button class="chip" data-i="0">Electricity bill</button>
+      <button class="chip" data-i="1">Parcel link</button>
+      <button class="chip" data-i="2">Hinglish job offer</button>
+      <button class="chip" data-i="3">Bank OTP</button>
+      <button class="chip" data-i="4">FedEx KYC</button>
+    </div>
+  </div>
+
+  <div id="result"></div>
+  <p class="foot">OTPs, account and phone numbers are masked before the message is sent to Jev. Links are opened by
+    the server, never by your phone. A verdict is a second opinion: when in doubt, contact the company through its
+    official app or website.</p>
+</main>
+<script>
+const EXAMPLES = [
+  ["Dear Customer, your electricity connection will be disconnected tonight at 9:30 PM because your previous month bill was not updated. Please contact our electricity officer 9876543210 immediately.", "+91 91234 56789"],
+  ["Due to the incomplete house number, we cannot deliver to your door, please update: did.li/Ca3TY", "+91 86000 00008"],
+  ["Ghar baithe kamaye Rs 5000 roz! Bas Google reviews dene hai. Abhi WhatsApp karein 9456780123", "+91 94567 80123"],
+  ["482913 is your OTP for login to HDFC Bank NetBanking. Valid for 5 mins. Do not share it with anyone. -HDFC Bank", "VM-HDFCBK-S"],
+  ["Dear Customer, Your shipment under 771234 requires KYC documents. Upload your documents using the Link https://kyc.fedex.com. Ignore if already done. -FedEx", "AX-KYCREM"],
+];
+const VERDICT = {
+  scam:   ["⛔", "Likely a scam"],
+  unsure: ["⚠️", "Be careful"],
+  safe:   ["✅", "Looks genuine"],
+};
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const nice = (s) => esc(String(s).replaceAll("_", " "));
+
+document.querySelectorAll(".chip").forEach((b) => b.onclick = () => {
+  const [text, sender] = EXAMPLES[+b.dataset.i];
+  $("text").value = text; $("sender").value = sender; check();
+});
+$("go").onclick = check;
+$("text").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) check(); });
+
+async function check() {
+  const text = $("text").value.trim();
+  if (!text) { $("text").focus(); return; }
+  $("go").disabled = true; $("go").innerHTML = '<span class="spinner"></span>Checking…';
+  try {
+    const resp = await fetch("api/check", {method: "POST", headers: {"Content-Type": "application/json"},
+                                           body: JSON.stringify({text, sender: $("sender").value})});
+    const data = await resp.json();
+    $("result").innerHTML = resp.ok ? render(data) : `<div class="error">${esc(data.error)}</div>`;
+  } catch (e) {
+    $("result").innerHTML = `<div class="error">Could not reach the server: ${esc(e)}</div>`;
+  } finally {
+    $("go").disabled = false; $("go").textContent = "Check message";
+  }
+}
+
+function render(r) {
+  const d = r.decision, [icon, title] = VERDICT[d.verdict];
+  const pct = Math.round(d.p_scam * 100);
+  const before = d.p_quick !== undefined ? ` (${Math.round(d.p_quick * 100)}% before checking links)` : "";
+  let html = `<div class="card">
+    <div class="verdict ${d.verdict}"><div class="icon">${icon}</div><div>
+      <div class="title">${title}</div>
+      <div class="prob">Chance it's a scam: ${pct}%${before}</div>
+      <div class="meter"><i style="width:${pct}%"></i></div></div></div>
+    <div class="block"><h3>Why</h3>${esc(d.why)}</div>
+    <div class="block"><h3>What to do</h3>${esc(d.do)}</div>
+    <div class="facts">
+      <span class="fact">Type: ${nice(d.scam_type)}</span>
+      <span class="fact">Claims to be: ${nice(d.brand)}</span>
+      <span class="fact">${nice(d.asks_for === "nothing" ? "Asks for nothing" : "Asks you to: " + d.asks_for)}</span>
+      <span class="fact">Sender: ${esc(r.sender_kind)}</span>
+    </div>`;
+  if (r.investigation) {
+    html += `<div class="block"><h3>Links checked</h3>` + r.investigation.map((e) => `
+      <div class="link"><code>${esc(e.link)}</code><ul>
+        ${e.redirected_from ? `<li>Redirected from ${esc(e.redirected_from)}</li>` : ""}
+        <li>Lands on <b>${esc(e.lands_on)}</b>: ${esc(e.domain_owner)}</li>
+        <li>Domain registered ${esc(e.domain_registered)}</li>
+        <li>${esc(e.fetch)}${e.page && e.page.title ? `: “${esc(e.page.title)}”` : ""}</li>
+        ${e.page && e.page.form_fields && e.page.form_fields.length ? `<li>Page asks for: ${esc(e.page.form_fields.join(", "))}</li>` : ""}
+      </ul></div>`).join("") + `</div>`;
+  }
+  html += `<div class="block"><h3>What Jev saw</h3><div class="masked">${esc(r.masked_message)}</div></div>
+    <div class="foot">${esc(r.model)} · ${r.latency_ms} ms of Jev · ${r.input_tokens} tokens</div></div>`;
+  return html;
+}
+</script>
+</html>
