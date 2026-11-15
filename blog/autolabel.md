@@ -1,12 +1,12 @@
 # How sure is "sure"? Jev vs Strands Decider on 770 real complaints
 
-*Blog · AI · Data labeling · Jev · Strands · November 15, 2026 · 13 min read · [Source code on GitHub](https://github.com/mani-bellan/jev-apps/tree/main/autolabel)*
+*Blog · AI · Data labeling · Jev · Strands · November 15, 2026 · 15 min read · [Source code on GitHub](https://github.com/mani-bellan/jev-apps/tree/main/autolabel)*
 
 *"I paid this debt in March. The collector still calls me three times a day, and now it shows up on my credit report."*
 
-Is that a complaint about debt collection, or about credit reporting? Is the problem the calls, or the report? Somebody has to decide, for every complaint, support ticket and survey answer. Teams that get thousands a week either pay people to sort them, or train a classifier, which first needs thousands of examples that people have already sorted.
+Is that a complaint about debt collection, or about credit reporting? Is the problem the calls, or the report? Somebody has to decide, for every complaint, support ticket and survey answer. Teams that get thousands a week either pay people to sort them, or train a classifier, a traditional machine-learning model that learns the categories from examples, which first needs thousands of complaints that people have already sorted.
 
-Decision models offer a third way. You describe the categories in plain words, and the model picks one and tells you how sure it is. If it's sure, you keep its label. If not, a person looks. Two of these models came out two weeks apart this autumn: Jev, a paid hosted service, and Strands Decider, which is free and open. Both say they give you probabilities you can trust. I wanted to see which one I could actually leave alone with real data, judged the same way.
+Decision models offer a third way. You describe the categories in plain words, and the model picks one and tells you how sure it is. If it's sure, you keep its label. If not, a person looks. Two of these models came out two weeks apart this autumn: Jev, a paid hosted service, and Strands Decider, which is free and open. Both promise that their confidence means what it says: when they report 90%, they are right about 90% of the time. I wanted to see which one I could actually leave alone with real data, judged the same way.
 
 ## TL;DR
 
@@ -15,20 +15,34 @@ Decision models offer a third way. You describe the categories in plain words, a
 | **What I built** | Autolabel: sorts consumer complaints into a product (11 options) and an issue (3 to 10 options per product) and keeps a label only when the model is sure enough. The same code runs on Jev or on Strands Decider by changing one URL. |
 | **The data** | 1,320 real complaints that consumers sent to a US government agency in 2025, each with the product and issue the consumer picked when filing. Split before anything else into 110 to write the questions, 440 to set thresholds and 770 to report. |
 | **Accuracy** | Product: **Jev 76%**, Strands 71%. A classic classifier needed 21,739 labeled complaints to reach 78%; trained on 440 it got 66%. Issue: Jev 59%, Strands 57%. |
-| **Trust** | **Strands' confidence is honest; Jev's isn't.** Jev was 99% sure about 83% of complaints and right on 82% of those. When Strands said 95%, it was right 90% of the time. So Strands could label 39% of complaints on its own at 91% accuracy; Jev could never reach 90% at any threshold. |
-| **Cost and speed** | Jev: about 50 ms and $0.52 per 10,000 complaints. Strands: free, but about 3 seconds per complaint on a 16-core CPU (a GPU would be far faster), and your data never leaves your machine. |
+| **Trust** | **Strands' confidence is honest; Jev's isn't.** Jev was 99% sure about 83% of complaints and right on 82% of those. When Strands said 95%, it was right 90% of the time. So Strands could label 39% of complaints on its own at 91% accuracy; Jev could never reach 90%, however high I set the bar. |
+| **Cost and speed** | Jev: about 0.05 seconds and $0.52 per 10,000 complaints. Strands: free, but about 3 seconds per complaint on an ordinary 16-core server with no graphics card (a GPU would be far faster), and your data never leaves your machine. |
 
 It's a small, exploratory comparison, and the labels themselves are noisy. The limits are at the end.
 
+## A few terms, in plain words
+
+If you work with machine learning every day, skip ahead. If not, these seven terms are all you need for the rest of the post.
+
+| Term | What it means here |
+|---|---|
+| **Label** | The category attached to a complaint, such as "Mortgage". |
+| **Confidence** | The probability a model attaches to its answer, from 0 to 1. 0.90 means "90% sure". |
+| **Threshold** | The confidence an answer needs before it's accepted without a person checking it. Below it, a person decides. |
+| **Calibrated** | You can take the model's confidence at face value: of everything it's 90% sure about, about 90% turns out right. |
+| **Classifier** | A traditional machine-learning model that learns categories from examples people have already labeled. The more examples, the better it gets. |
+| **API** | The agreed format a program uses to send a request to a service and get an answer back. |
+| **Token** | A word or part of a word. Hosted AI services charge by the number of tokens they read. |
+
 ## Two decision models, one API
 
-Most AI models write: answers, emails, code. A decision model doesn't write anything. You give it some text and a few typed questions, such as *yes or no*, *pick one of these options* or *rate this on a scale*, and it returns an answer to each with a probability, in a single pass. That makes it fast, cheap and easy to wire into code: no parsing, and every answer comes with a number you can set a threshold on.
+Most AI models write: answers, emails, code. A decision model doesn't write anything. You give it some text and a few typed questions, such as *yes or no*, *pick one of these options* or *rate this on a scale*, and it returns an answer to each with a probability, in a single pass. That makes it fast, cheap and easy to build into software: the answer comes back as data a program can use directly, not a paragraph it has to pick apart, and every answer comes with a number you can set a threshold on.
 
-**Jev**, from TypeSafe AI, started the category in September 2026. TypeSafe calls it a "System One" model, after the fast, intuitive half of thinking. It's a hosted API: you send a request and pay per token. Its size and architecture aren't published.
+**Jev**, from TypeSafe AI, started the category in September 2026. TypeSafe calls it a "System One" model, after the fast, intuitive half of thinking. It's a hosted API: your program sends it text over the internet, and you pay by the amount of text it reads. Its size and architecture aren't published.
 
-**Strands Decider 2B** arrived two weeks later from the Strands Agents team at AWS, as an open model anyone can download, inspect and run. It takes a small open language model (2 billion parameters), removes the part that writes text, and adds a small scoring head that rates each option you offer. Weights, code and training data are public under the Apache 2.0 licence.
+**Strands Decider 2B** arrived two weeks later from the Strands Agents team at AWS, as an open model anyone can download, inspect and run. It starts from a small open language model, the kind of AI that normally writes text. "2B" means 2 billion parameters, the numbers the model learned in training; big chat assistants are thought to have hundreds of billions. The team removed the part that writes and added a small scoring layer that rates each option you offer. The learned numbers (the "weights"), the code and the training data are all public, under the Apache 2.0 licence, which allows commercial use.
 
-The interesting part is that **both accept the same request.** Strands Decider deliberately serves the same API shape as Jev, so one program can call either by changing a URL. That is what made a fair comparison possible.
+The interesting part is that **both accept the same request.** Strands Decider deliberately accepts the same request format as Jev, so one program can talk to either by changing a single web address. That is what made a fair comparison possible.
 
 | | Jev | Strands Decider 2B |
 |---|---|---|
@@ -36,7 +50,7 @@ The interesting part is that **both accept the same request.** Strands Decider d
 | How you use it | Hosted API | Download it and run it yourself |
 | Openness | Closed; size and design not published | Open weights, code and data (Apache 2.0) |
 | Cost | $0.042 per million input tokens | Free; you pay for the machine |
-| Speed | About 50–100 ms per request | About 115 ms on a GPU (vendor figure); seconds on a CPU |
+| Speed | About 0.05–0.1 s per request | About 0.1 s on a graphics card (GPU; vendor figure); seconds on an ordinary processor (CPU) |
 | Your data | Sent to TypeSafe's servers | Never leaves your machine |
 
 ![Jev and Strands Decider side by side: hosted and closed versus open and self-hosted, sharing the same request and answer format](https://raw.githubusercontent.com/mani-bellan/jev-apps/main/blog/images/autolabel-models.png)
@@ -58,18 +72,18 @@ Autolabel is built around that idea. Each complaint gets two questions: first th
 
 ![How Autolabel labels a complaint: build the request, ask the product, then the issue, compare confidence with per-model thresholds, and either keep the label or send it to a review queue](https://raw.githubusercontent.com/mani-bellan/jev-apps/main/blog/images/autolabel-architecture.png)
 
-*How Autolabel works. Purple boxes are calls to a decision model, Jev or Strands Decider through the same client; grey boxes are plain code. The dashed row runs once, on labeled complaints, to set each model's thresholds.*
+*How Autolabel works. Purple boxes are calls to a decision model, Jev or Strands Decider through the same client; grey boxes are plain code. The dashed row runs once, on labeled complaints, to set each model's thresholds. File and setting names are there for readers who want to find the code.*
 
 ## A fair fight
 
 Comparing a model you call over the internet with one you run yourself is easy to get wrong, so I fixed the rules first.
 
-- **Fixed splits, decided before any model saw them.** 120 complaints per product, picked by a seed: 110 to write the questions (dev), 440 to set thresholds (tune) and 770 to report (held-out). Nothing was tuned on the held-out set. Products are sampled equally on purpose: in the raw data three in four complaints are about credit reports, which would make "always say credit reports" look clever.
+- **Fixed splits, decided before any model saw them.** Think of them as practice questions, a mock exam and the final exam. I drew 120 complaints per product at random, with a fixed random seed so anyone can repeat the draw: 110 to write the questions ("dev"), 440 to set thresholds ("tune") and 770 to report on ("held-out"). Nothing was adjusted on the held-out set, so its numbers show what to expect on complaints the setup has never seen. Products are sampled equally on purpose: in the raw data three in four complaints are about credit reports, which would make "always say credit reports" look clever.
 - **Real labels, untouched.** Every label is the one the consumer chose. Nobody relabeled anything, including me.
-- **Same instructions, each model's best wording.** I wrote the questions on the dev set with both models in the loop and tried three wordings. One mattered: describing each option in a line helped Jev on the issue question (66% vs 60% on dev) but hurt Strands (54% vs 65%). So Jev gets the descriptions and Strands gets bare option names, the best of what I tried for each.
-- **Thresholds set per model.** Each model's confidence lives on its own scale, so each gets its own threshold, set on the tune set for a target accuracy (85%, 90% or 95%), then applied unchanged to held-out.
+- **Same instructions, each model's best wording.** I drafted the questions on the dev set, testing both models as I went, and tried three wordings. One mattered: describing each option in a line helped Jev on the issue question (66% vs 60% on dev) but hurt Strands (54% vs 65%). So Jev gets the descriptions and Strands gets bare option names, the best of what I tried for each.
+- **Thresholds set per model.** One model's "0.9" doesn't mean the same as another's, so each gets its own threshold, set on the tune set for a target accuracy (85%, 90% or 95%), then applied unchanged to held-out.
 - **Issues scored on their own.** For the numbers below, the issue question is told the true product, so a wrong product doesn't also count as a wrong issue. (The app itself asks with the product it picked.)
-- **Two classic baselines.** A TF-IDF classifier (word counts plus logistic regression) trained on the same 440 tune complaints, and one trained on 21,739 more. The first shows what you get with a few hundred labels; the second shows what you get when you've already paid for a lot of them.
+- **Two classic baselines.** Two traditional classifiers, the kind teams built before decision models existed, which learn which words go with which category (for the technical reader: TF-IDF word weights plus logistic regression). One learned from the same 440 tune complaints, the other from 21,739 more. The first shows what you get with a few hundred labels; the second shows what you get when you've already paid for a lot of them.
 
 ![How the comparison was run: public complaints, fixed splits, the same questions to Jev, Strands Decider and two classifiers, thresholds set on tune, results on held-out](https://raw.githubusercontent.com/mani-bellan/jev-apps/main/blog/images/autolabel-protocol.png)
 
@@ -91,7 +105,7 @@ Before the averages, here is what a run actually looks like. The three complaint
 
 ## Results
 
-On the 770 held-out complaints:
+On the 770 held-out complaints. **Accuracy** is the share of all answers that match the consumer's label. The other columns show what happens when a method labels only what it's sure about, for three accuracy targets: what share of complaints it labeled with no person involved, and how accurate those labels turned out.
 
 | Product (11 options) | Accuracy | Labels on its own, aiming at 85% | Aiming at 90% | Aiming at 95% |
 |---|---|---|---|---|
@@ -102,7 +116,7 @@ On the 770 held-out complaints:
 
 Three things stand out.
 
-**Jev is the more accurate labeler.** Five points ahead of Strands on product, a clear gap; two on issue, which is within the noise. And it got there with no training examples at all, nearly matching a classifier that needed 21,739 labeled complaints.
+**Jev is the more accurate labeler.** Five points ahead of Strands on product, a clear gap; two on issue, a gap too small to rule out luck with this many complaints. And it got there with no training examples at all, nearly matching a classifier that needed 21,739 labeled complaints.
 
 **Strands knows when it doesn't know.** Below 90%, the two are close: both can label 62% to 70% of complaints at 86% accuracy. Above it, they part ways. Strands can label 39% of complaints at 91% accuracy, or 31% at 93%. Jev can't reach 90% at any threshold.
 
@@ -110,7 +124,7 @@ The chart shows why. Sort each method's answers from most to least confident and
 
 ![Accuracy of the labels each method is most confident about, by share of complaints labeled: Strands stays above 90% for the first 40%, Jev is flat at 88% for its first 65%](https://raw.githubusercontent.com/mani-bellan/jev-apps/main/blog/images/autolabel-chart-coverage-product.png)
 
-*Further right at the same height is better. Jev's line is flat for its first 65% because it gives all of those complaints the same confidence, 1.00, so there is no way to pick its best answers out of them.*
+*Read each line from left to right: it starts with the answers its method was most sure about and adds less certain ones as it goes. Height is the accuracy of everything labeled so far, so a line that stays high further to the right can label more complaints on its own. Jev's line is flat for its first 65% because it gives all of those complaints the same confidence, 1.00, so there is no way to pick its best answers out of them.*
 
 **Issues are hard for everyone.** Picking the issue is a much finer distinction, and the consumers' own choices are inconsistent. All four methods top out at 49% to 63%, and only the large classifier can label a meaningful share on its own (48% at 85% accuracy). For issues, a decision model is a suggestion box for a person, not a replacement.
 
@@ -122,7 +136,7 @@ This is the heart of it. A model is calibrated when its confidence matches reali
 
 *Each dot groups answers by confidence; bigger dots hold more answers. On the dashed diagonal, "90% sure" means right 90% of the time.*
 
-Jev put 83% of all product answers at 99% confidence or more, and those were right 82% of the time. That's overconfidence: a "99%" that behaves like an "82%". Strands' biggest group sat at 95% confidence and was right 90% of the time, close to the line. Its average calibration error was 0.08, against Jev's 0.18. On issues the gap is wider: 0.07 against 0.27.
+Jev put 83% of all product answers at 99% confidence or more, and those were right 82% of the time. That's overconfidence: a "99%" that behaves like an "82%". Strands' biggest group sat at 95% confidence and was right 90% of the time, close to the line. On average, Strands' stated confidence was 8 percentage points away from how often it was actually right; Jev's was 18 points away. On issues the gap is wider: 7 points against 27. (For the technical reader: expected calibration error, 0.08 vs 0.18 and 0.07 vs 0.27.)
 
 In practice, this decides what a threshold can do for you. With Strands, raising the bar buys you accuracy. With Jev, beyond a point, it buys you nothing: two thirds of its answers say the same thing.
 
@@ -132,12 +146,12 @@ Part of what looks like Jev's overconfidence is the labels themselves. For 66 of
 
 | | Jev | Strands Decider 2B (on CPU) |
 |---|---|---|
-| Time per complaint | 53 ms (median) | about 3 s alone on a 16-core server, and about the same per complaint in a batch |
+| Time per complaint | 0.05 s (median) | about 3 s alone on a 16-core server, and about the same per complaint in a batch |
 | Cost per 10,000 complaints | $0.52 | no fee; about 7 hours of one 16-core server |
 | Input per complaint | 1,243 tokens (with option descriptions) | 510 tokens (bare option names) |
 | Where your text goes | TypeSafe's servers | nowhere |
 
-Jev is effectively free and instant at this scale. Strands has no fee, but on a CPU it's slow. I ran three 16-core cloud servers side by side and they worked through about 70 complaints a minute. The Strands team reports about 115 ms per question on a gaming GPU, which would change that picture completely; I didn't have one to test.
+Jev is effectively free and instant at this scale. Strands has no fee, but on a CPU it's slow. I ran three 16-core cloud servers side by side and they worked through about 70 complaints a minute. The Strands team reports about 0.1 seconds per question on a gaming graphics card (GPU), which would change that picture completely; I didn't have one to test.
 
 The case for Strands isn't speed. It's that you can run it where your data lives, inspect how it was trained, and pay nothing per call. For complaints, medical notes or anything you can't send to a third party, that may matter more than five points of accuracy.
 
@@ -145,7 +159,7 @@ The case for Strands isn't speed. It's that you can run it where your data lives
 
 1. **Accuracy and honesty are different properties.** The more accurate model was the less trustworthy one about its own answers. If you plan to auto-accept labels above a threshold, test calibration, not just accuracy.
 2. **A decision model with zero examples can match a classifier trained on twenty thousand.** Jev labeled products within two points of a classifier that needed 21,739 labeled complaints. Strands beat the one trained on 440. If you don't have labeled data yet, start here.
-3. **Prompts don't transfer between models.** The same option descriptions that helped Jev cost Strands 11 points on issues in my dev tests. Same API doesn't mean same behavior: tune the wording for each model on data you won't report on.
+3. **Wording that helps one model can hurt another.** The same option descriptions that helped Jev cost Strands 11 points on issues in my dev tests. Same API doesn't mean same behavior: tune the wording for each model on data you won't report on.
 4. **Your "ground truth" is somebody's guess.** About 1 in 12 complaints carries a product label that all three strong methods disagree with. Every number here is agreement with what consumers picked, so a perfect score isn't possible.
 5. **Two models are not automatically better than one.** Accepting Jev's label only when Strands agreed and was confident labeled 39% at 91%, the same as Strands alone.
 6. **Hardware is the real price of open.** "Free" Strands took about 3 seconds per complaint on a CPU. Budget for a GPU if you need volume.
@@ -155,12 +169,14 @@ The case for Strands isn't speed. It's that you can run it where your data lives
 - **Noisy labels.** Consumers choose their own categories, and some choices are odd. All accuracy numbers are agreement with those choices.
 - **One domain, one language.** US financial complaints in English, 200 to 2,500 characters long, products sampled equally. Results on support tickets or other languages may differ.
 - **One version of each model.** Jev `jev-1.13.0` and `strands-decider-2B-qwen3.5-v1-2610`, in November 2026. Strands also comes in larger sizes (up to 26B), which its team reports as more accurate; I only tested the 2B.
-- **Small held-out set.** 770 complaints, 70 per product, so each accuracy figure has a margin of about ±3 points. Jev's 5-point lead on product holds up (95% interval: 2.6 to 7.4 points); its 2-point lead on issues doesn't (−1.4 to 5.3).
+- **Small held-out set.** 770 complaints, 70 per product, so each accuracy figure has a margin of about ±3 points. Jev's 5-point lead on product holds up: the plausible range for the true gap (a 95% confidence interval) is 2.6 to 7.4 points, all in Jev's favour. Its 2-point lead on issues doesn't: that range, −1.4 to 5.3, includes zero.
 - **Jev returns probabilities rounded to two decimals**, so I couldn't rank answers inside its 1.00 block. Finer probabilities might let a threshold separate them.
 - **Different option descriptions.** Each model got its best wording from the dev set, so the two didn't see identical prompts.
 - **Strands on CPU only.** The speed figures for Strands are for 16-core CPU servers, not a GPU.
 
 ## Try it
+
+For developers: the whole experiment reruns with a few commands.
 
 ```bash
 git clone https://github.com/mani-bellan/jev-apps && cd jev-apps/autolabel
