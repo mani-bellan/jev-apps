@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How sure is &quot;sure&quot;? Jev vs Strands Decider on 770 real complaints</title>
+<style>
+			:root {
+				color-scheme: light dark;
+				--bg: #ffffff;
+				--surface: #f6f7f9;
+				--border: #e1e4ea;
+				--line: #aeb6c4;
+				--text: #1b1f27;
+				--muted: #5d6675;
+				--accent: #2f5fd0;
+				--accent-soft: #eaf0fd;
+				--ok: #1f7a4d;
+				--ok-soft: #e4f4ec;
+				--warn: #8a5a00;
+				--warn-soft: #fdf1d8;
+				--bad: #b3261e;
+				--bad-soft: #fde8e6;
+				--sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+				--mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+			}
+			@media (prefers-color-scheme: dark) {
+				:root {
+					--bg: #14161a;
+					--surface: #1c1f25;
+					--border: #2c313a;
+					--line: #566070;
+					--text: #e7e9ee;
+					--muted: #9ba3b1;
+					--accent: #8fb0ff;
+					--accent-soft: #1e2a47;
+					--ok: #6fd3a0;
+					--ok-soft: #173326;
+					--warn: #f0c36a;
+					--warn-soft: #3a2e12;
+					--bad: #ff9d94;
+					--bad-soft: #401f1c;
+				}
+			}
+			* {
+				box-sizing: border-box;
+			}
+			html {
+				scroll-behavior: smooth;
+			}
+			body {
+				margin: 0;
+				background: var(--bg);
+				color: var(--text);
+				font: 16px/1.55 var(--sans);
+				-webkit-text-size-adjust: 100%;
+			}
+			.layout {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr);
+				max-width: 46rem;
+				margin: 0 auto;
+				/* Bottom space keeps the last block clear of the review button in the corner. */
+				padding: 2.5rem 1.25rem 6rem;
+			}
+			.toc {
+				display: none;
+			}
+			@media (min-width: 64rem) {
+				.layout {
+					grid-template-columns: 13rem minmax(0, 46rem);
+					gap: 3rem;
+					max-width: 64rem;
+				}
+				.toc {
+					display: block;
+					position: sticky;
+					top: 2.5rem;
+					align-self: start;
+					max-height: calc(100vh - 5rem);
+					overflow-y: auto;
+					font-size: 0.875rem;
+				}
+			}
+			.toc ol {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			.toc a {
+				display: block;
+				padding: 0.3rem 0.6rem;
+				border-left: 2px solid var(--border);
+				color: var(--muted);
+				text-decoration: none;
+			}
+			.toc a:hover,
+			.toc a[aria-current='true'] {
+				border-left-color: var(--accent);
+				color: var(--text);
+			}
+			h1,
+			h2,
+			h3 {
+				line-height: 1.25;
+				text-wrap: balance;
+			}
+			h1 {
+				margin: 0.4rem 0 0.75rem;
+				font-size: 2rem;
+				letter-spacing: -0.01em;
+			}
+			h2 {
+				margin: 0 0 0.9rem;
+				font-size: 1.3rem;
+			}
+			h3 {
+				margin: 0;
+				font-size: 1.02rem;
+			}
+			p,
+			ul,
+			ol,
+			dl,
+			figure,
+			pre {
+				margin: 0 0 0.9rem;
+			}
+			a {
+				color: var(--accent);
+			}
+			section {
+				margin-top: 2.75rem;
+			}
+			[id] {
+				scroll-margin-top: 1.5rem;
+			}
+			.kicker,
+			.meta {
+				margin: 0;
+				color: var(--muted);
+				font-size: 0.875rem;
+			}
+			.meta {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem 0.75rem;
+				align-items: center;
+			}
+			.lede {
+				font-size: 1.15rem;
+				color: var(--text);
+			}
+
+			/* Summary: the part every reader sees. */
+			.facts {
+				display: grid;
+				gap: 1px;
+				margin: 0;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				background: var(--border);
+				overflow: hidden;
+			}
+			.facts > div {
+				display: grid;
+				grid-template-columns: 8.5rem minmax(0, 1fr);
+				gap: 1rem;
+				padding: 0.7rem 1rem;
+				background: var(--surface);
+			}
+			.facts dt {
+				color: var(--muted);
+				font-size: 0.875rem;
+				font-weight: 600;
+			}
+			.facts dd {
+				margin: 0;
+			}
+			/* The first row is what the reader is asked to do, so it stands out from the rest. */
+			.facts > .ask {
+				background: var(--accent-soft);
+			}
+			.facts > .ask dt {
+				color: var(--accent);
+			}
+			@media (max-width: 34rem) {
+				h1 {
+					font-size: 1.6rem;
+				}
+				.facts > div {
+					grid-template-columns: minmax(0, 1fr);
+					gap: 0.15rem;
+				}
+			}
+
+			/* Items: one decision, step, or alternative per block, so one comment hits one thing. */
+			.items {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				display: grid;
+				gap: 0.75rem;
+			}
+			.item {
+				padding: 0.9rem 1rem;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+			}
+			.item > :last-child {
+				margin-bottom: 0;
+			}
+			.item-head {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem 0.6rem;
+				align-items: center;
+				margin-bottom: 0.5rem;
+			}
+			.item-head h3 {
+				flex: 1 1 12rem;
+			}
+			.tag {
+				padding: 0.05rem 0.4rem;
+				border-radius: 5px;
+				background: var(--accent-soft);
+				color: var(--accent);
+				font: 600 0.8rem/1.5 var(--mono);
+				white-space: nowrap;
+			}
+			:target {
+				outline: 2px solid var(--accent);
+				outline-offset: 3px;
+				border-radius: 10px;
+			}
+			.chip {
+				display: inline-block;
+				padding: 0.05rem 0.55rem;
+				border-radius: 999px;
+				background: var(--surface);
+				border: 1px solid var(--border);
+				color: var(--muted);
+				font-size: 0.78rem;
+				font-weight: 600;
+				white-space: nowrap;
+			}
+			.chip.review,
+			.chip.doing {
+				background: var(--warn-soft);
+				border-color: transparent;
+				color: var(--warn);
+			}
+			.chip.done,
+			.chip.pick {
+				background: var(--ok-soft);
+				border-color: transparent;
+				color: var(--ok);
+			}
+			.chip.blocked {
+				background: var(--bad-soft);
+				border-color: transparent;
+				color: var(--bad);
+			}
+			.options {
+				padding-left: 1.2rem;
+				list-style: disc;
+			}
+			.options li {
+				margin-bottom: 0.3rem;
+			}
+			.detail {
+				display: grid;
+				grid-template-columns: 4.5rem minmax(0, 1fr);
+				gap: 0.25rem 0.75rem;
+				font-size: 0.92rem;
+			}
+			.detail dt {
+				color: var(--muted);
+				font-weight: 600;
+			}
+			.detail dd {
+				margin: 0;
+			}
+			.quiet {
+				color: var(--muted);
+				font-size: 0.92rem;
+			}
+
+			.note {
+				margin: 0 0 0.9rem;
+				padding: 0.75rem 1rem;
+				border-left: 3px solid var(--accent);
+				border-radius: 0 8px 8px 0;
+				background: var(--accent-soft);
+			}
+			.note.warn {
+				border-left-color: var(--warn);
+				background: var(--warn-soft);
+			}
+			.note > :last-child {
+				margin-bottom: 0;
+			}
+
+			.table-wrap {
+				margin: 0 0 0.9rem;
+				overflow-x: auto;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+			}
+			table {
+				width: 100%;
+				/* On a phone the table scrolls sideways instead of squeezing its columns. */
+				min-width: 34rem;
+				border-collapse: collapse;
+				font-size: 0.92rem;
+			}
+			th,
+			td {
+				padding: 0.55rem 0.8rem;
+				border-bottom: 1px solid var(--border);
+				text-align: left;
+				vertical-align: top;
+			}
+			th {
+				background: var(--surface);
+				color: var(--muted);
+				font-size: 0.82rem;
+			}
+			tr:last-child td {
+				border-bottom: 0;
+			}
+			td:has(> .tag:only-child) {
+				width: 1%;
+				white-space: nowrap;
+			}
+
+			code {
+				padding: 0.1em 0.3em;
+				border-radius: 4px;
+				background: var(--surface);
+				font: 0.88em var(--mono);
+				overflow-wrap: anywhere;
+			}
+			pre {
+				padding: 0.8rem 1rem;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				background: var(--surface);
+				overflow-x: auto;
+				font: 0.84rem/1.45 var(--mono);
+			}
+			pre code {
+				padding: 0;
+				background: none;
+				font: inherit;
+				overflow-wrap: normal;
+			}
+			/* Box-drawing diagrams need tight lines, or the vertical strokes show gaps. */
+			figure pre {
+				line-height: 1.2;
+			}
+			/* Before and After side by side; the panes stack when the page is narrow. */
+			.compare {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+				gap: 0.75rem;
+				margin: 0 0 0.9rem;
+			}
+			.compare > div {
+				min-width: 0;
+			}
+			.compare pre {
+				margin: 0;
+			}
+			.pane {
+				margin: 0 0 0.3rem;
+				color: var(--muted);
+				font-size: 0.82rem;
+				font-weight: 600;
+			}
+			/* The script at the end of the page adds these classes. */
+			pre .hot {
+				color: var(--accent);
+			}
+			.line {
+				display: block;
+			}
+			.line.add {
+				background: var(--ok-soft);
+				color: var(--ok);
+			}
+			.line.del {
+				background: var(--bad-soft);
+				color: var(--bad);
+			}
+			/* Visuals. .viz frames one picture. .flow, .parts, and .bars are ready-made pictures. */
+			.viz {
+				container-type: inline-size;
+				padding: 1.1rem 1rem;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				background: var(--surface);
+				overflow-x: auto;
+			}
+			.viz > :last-child {
+				margin-bottom: 0;
+			}
+			.viz svg {
+				margin: 0 auto;
+				color: var(--text);
+				font-family: var(--sans);
+			}
+			.compare > div {
+				display: flex;
+				flex-direction: column;
+			}
+			.compare .viz {
+				flex: 1;
+			}
+
+			/* A flow: nodes joined by edges, top to bottom. */
+			.flow {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
+			.node {
+				min-width: 6.5rem;
+				max-width: 100%;
+				padding: 0.45rem 0.85rem;
+				border: 1.5px solid var(--line);
+				border-radius: 8px;
+				background: var(--bg);
+				font-size: 0.92rem;
+				font-weight: 600;
+				line-height: 1.3;
+				text-align: center;
+			}
+			.node small {
+				display: block;
+				margin-top: 0.15rem;
+				color: var(--muted);
+				font-size: 0.8rem;
+				font-weight: 400;
+			}
+			.node.hot {
+				border-color: var(--accent);
+				background: var(--accent-soft);
+			}
+			.node.ok {
+				border-color: var(--ok);
+				background: var(--ok-soft);
+			}
+			.node.bad {
+				border-color: var(--bad);
+				background: var(--bad-soft);
+			}
+			.node.gone {
+				border-style: dashed;
+				background: none;
+				color: var(--muted);
+			}
+			/* The line is a background, the arrowhead is ::after, and ::before is the moving dot. */
+			.edge {
+				position: relative;
+				align-self: stretch;
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+				column-gap: 1.2rem;
+				min-height: 2.5rem;
+				margin: 2px 0;
+				color: var(--line);
+				background: linear-gradient(currentColor, currentColor) top center / 1.5px calc(100% - 5px)
+					no-repeat;
+			}
+			.edge::after {
+				content: '';
+				position: absolute;
+				left: 50%;
+				bottom: 0;
+				translate: -50% 0;
+				border: 5px solid transparent;
+				border-top: 7px solid currentColor;
+				border-bottom-width: 0;
+			}
+			.edge > span {
+				grid-column: 2;
+				align-self: center;
+				padding: 0.4rem 0 0.6rem;
+				color: var(--muted);
+				font-size: 0.8rem;
+				line-height: 1.25;
+			}
+			.edge.hot,
+			.edge.hot > span {
+				color: var(--accent);
+			}
+			/* Nodes that belong together or run in parallel. */
+			.group {
+				position: relative;
+				display: flex;
+				flex-wrap: wrap;
+				align-items: flex-start;
+				justify-content: center;
+				gap: 0.5rem;
+				max-width: 100%;
+				padding: 1.7rem 0.6rem 0.6rem;
+				border: 1.5px dashed var(--line);
+				border-radius: 10px;
+			}
+			.group::before {
+				content: attr(data-label);
+				position: absolute;
+				top: 0.35rem;
+				left: 0.7rem;
+				color: var(--muted);
+				font-size: 0.75rem;
+				font-weight: 600;
+			}
+			/* Left to right, when the picture is wide enough. */
+			@container (min-width: 34rem) {
+				.flow.row {
+					flex-direction: row;
+					justify-content: center;
+				}
+				.flow.row > .edge {
+					align-self: center;
+					flex: 1 1 3rem;
+					min-width: 3rem;
+					max-width: 10rem;
+					grid-template-columns: minmax(0, 1fr);
+					grid-template-rows: 1fr 1fr;
+					min-height: 2.6rem;
+					margin: 0 2px;
+					background-position: left center;
+					background-size: calc(100% - 5px) 1.5px;
+				}
+				.flow.row > .edge::after {
+					left: auto;
+					right: 0;
+					bottom: auto;
+					top: 50%;
+					translate: 0 -50%;
+					border: 5px solid transparent;
+					border-left: 7px solid currentColor;
+					border-right-width: 0;
+				}
+				.flow.row > .edge > span {
+					grid-column: 1;
+					grid-row: 1;
+					align-self: end;
+					padding: 0 0.6rem 0.3rem 0.2rem;
+					text-align: center;
+				}
+				.flow.row > .group {
+					flex-direction: column;
+					align-items: stretch;
+				}
+			}
+
+			/* One text split into labelled parts. */
+			.parts {
+				display: grid;
+				gap: 0.5rem;
+			}
+			.parts > div {
+				display: grid;
+				grid-template-columns: 8.5rem minmax(0, 1fr);
+				gap: 0.75rem;
+				align-items: start;
+			}
+			.parts dt {
+				padding-top: 0.55rem;
+				color: var(--muted);
+				font-size: 0.8rem;
+				font-weight: 600;
+			}
+			.parts dd {
+				margin: 0;
+				padding: 0.5rem 0.8rem;
+				border: 1.5px solid var(--line);
+				border-radius: 8px;
+				background: var(--bg);
+				font-size: 0.92rem;
+			}
+			.parts.code dd {
+				font: 0.84rem/1.5 var(--mono);
+				white-space: pre-wrap;
+				overflow-wrap: anywhere;
+			}
+			.parts > .hot dt {
+				color: var(--accent);
+			}
+			.parts > .hot dd {
+				border-color: var(--accent);
+				background: var(--accent-soft);
+			}
+			@container (max-width: 26rem) {
+				.parts > div {
+					grid-template-columns: minmax(0, 1fr);
+					gap: 0.15rem;
+				}
+				.parts dt {
+					padding-top: 0;
+				}
+			}
+
+			/* Bars: --v on each row is its length in percent of the longest bar. */
+			.bars {
+				display: grid;
+				grid-template-columns: auto minmax(3rem, 1fr) auto;
+				gap: 0.45rem 0.7rem;
+				padding: 0;
+				list-style: none;
+				font-size: 0.9rem;
+			}
+			.bars li {
+				display: grid;
+				grid-column: 1 / -1;
+				grid-template-columns: subgrid;
+				align-items: center;
+			}
+			.bars li::after {
+				content: '';
+				grid-column: 2;
+				grid-row: 1;
+				width: calc(var(--v, 0) * 1%);
+				min-width: 2px;
+				height: 0.85rem;
+				border-radius: 3px;
+				background: var(--line);
+				/* A script that changes --v gets a smooth change. */
+				transition: width 0.25s ease-out;
+			}
+			.bars li > span {
+				grid-column: 1;
+				max-width: 11rem;
+			}
+			.bars li > b {
+				grid-column: 3;
+				font: 600 0.84rem var(--mono);
+			}
+			.bars li.hot::after {
+				background: var(--accent);
+			}
+			.bars li.hot > b {
+				color: var(--accent);
+			}
+
+			/* Motion. Every picture is complete when it stands still: in print, in a screenshot, and
+			   for a reader who turned motion off. */
+			@media screen and (prefers-reduced-motion: no-preference) {
+				/* A dot travels along a live edge. Use it for the path that the data takes. */
+				.edge.live::before {
+					content: '';
+					position: absolute;
+					left: 50%;
+					top: 0;
+					width: 7px;
+					height: 7px;
+					margin: -3.5px;
+					border-radius: 50%;
+					background: var(--accent);
+					animation: travel-down 1.8s linear infinite;
+				}
+				@keyframes travel-down {
+					0% {
+						top: 0;
+						opacity: 0;
+					}
+					15%,
+					80% {
+						opacity: 1;
+					}
+					100% {
+						top: calc(100% - 6px);
+						opacity: 0;
+					}
+				}
+				@container (min-width: 34rem) {
+					.flow.row > .edge.live::before {
+						left: 0;
+						top: 50%;
+						animation-name: travel-right;
+					}
+				}
+				@keyframes travel-right {
+					0% {
+						left: 0;
+						opacity: 0;
+					}
+					15%,
+					80% {
+						opacity: 1;
+					}
+					100% {
+						left: calc(100% - 6px);
+						opacity: 0;
+					}
+				}
+				/* The script at the end of the page adds .play when the figure scrolls into view. */
+				.play .seq > * {
+					animation: appear 0.45s ease-out both;
+					animation-delay: calc(var(--i, 0) * 0.3s);
+				}
+				.play .bars li::after {
+					transform-origin: left;
+					animation: grow 0.8s ease-out both;
+				}
+				@keyframes appear {
+					from {
+						opacity: 0;
+						transform: translateY(-6px);
+					}
+				}
+				@keyframes grow {
+					from {
+						transform: scaleX(0);
+					}
+				}
+			}
+			.replay {
+				margin-left: 0.5rem;
+				padding: 0;
+				border: 0;
+				background: none;
+				color: var(--accent);
+				font: inherit;
+				text-decoration: underline;
+				cursor: pointer;
+			}
+			@media print {
+				.replay {
+					display: none;
+				}
+			}
+			figure svg,
+			figure img {
+				display: block;
+				max-width: 100%;
+				height: auto;
+			}
+			figcaption {
+				margin-top: 0.4rem;
+				color: var(--muted);
+				font-size: 0.875rem;
+			}
+			details {
+				margin: 0 0 0.6rem;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+			}
+			summary {
+				padding: 0.6rem 1rem;
+				cursor: pointer;
+				font-weight: 600;
+			}
+			details > :not(summary) {
+				margin-left: 1rem;
+				margin-right: 1rem;
+			}
+			@media print {
+				.toc {
+					display: none;
+				}
+				.layout {
+					display: block;
+					max-width: none;
+					padding: 0;
+				}
+			}
+		</style>
+<style>
+figure img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--border)}
+figure figcaption{color:var(--muted);font-size:.9rem;margin-top:.5rem}
+blockquote{margin:1rem 0;padding:.6rem 1rem;border-left:3px solid var(--accent);background:var(--surface);border-radius:0 8px 8px 0}
+blockquote p{margin:0}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" aria-label="Contents"></nav>
+<main>
+<header id="top"><h1>How sure is "sure"? Jev vs Strands Decider on 770 real complaints</h1>
+<p class="meta">Blog · AI · Data labeling · Jev · Strands · November 15, 2026 · 11 min read · <a href="https://github.com/mani-bellan/jev-apps/tree/main/autolabel">Source code on GitHub</a></p>
+<p><em>"I paid this debt in March. The collector still calls me three times a day, and now it shows up on my credit report."</em></p>
+<p>Is that a complaint about debt collection, or about credit reporting? Is the problem the calls, or the report? Somebody has to decide, for every complaint, support ticket and survey answer. Teams that get thousands a week either pay people to sort them, or train a classifier, which first needs thousands of examples that people have already sorted.</p>
+<p>Decision models offer a third way. You describe the categories in plain words, and the model picks one and tells you how sure it is. If it's sure, you keep its label. If not, a person looks. Two of these models came out two weeks apart this autumn: Jev, a paid hosted service, and Strands Decider, which is free and open. Both say they give you probabilities you can trust. I wanted to see which one I could actually leave alone with real data, judged the same way.</p></header>
+<section id="tl-dr" data-toc="TL;DR">
+<h2>TL;DR</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>What I built</strong></td>
+<td>Autolabel: sorts consumer complaints into a product (11 options) and an issue (3 to 10 options per product) and keeps a label only when the model is sure enough. The same code runs on Jev or on Strands Decider by changing one URL.</td>
+</tr>
+<tr>
+<td><strong>The data</strong></td>
+<td>1,320 real complaints that consumers sent to a US government agency in 2025, each with the product and issue the consumer picked when filing. Split before anything else into 110 to write the questions, 440 to set thresholds and 770 to report.</td>
+</tr>
+<tr>
+<td><strong>Accuracy</strong></td>
+<td>Product: <strong>Jev 76%</strong>, Strands 71%. A classic classifier needed 21,739 labeled complaints to reach 78%; trained on 440 it got 66%. Issue: Jev 59%, Strands 57%.</td>
+</tr>
+<tr>
+<td><strong>Trust</strong></td>
+<td><strong>Strands' confidence is honest; Jev's isn't.</strong> Jev was 99% sure about 83% of complaints and right on 82% of those. When Strands said 95%, it was right 90% of the time. So Strands could label 39% of complaints on its own at 91% accuracy; Jev could never reach 90% at any threshold.</td>
+</tr>
+<tr>
+<td><strong>Cost and speed</strong></td>
+<td>Jev: about 50 ms and $0.52 per 10,000 complaints. Strands: free, but about 3 seconds per complaint on a 16-core CPU (a GPU would be far faster), and your data never leaves your machine.</td>
+</tr>
+</tbody>
+</table>
+<p>It's a small, exploratory comparison, and the labels themselves are noisy. The limits are at the end.</p>
+</section>
+<section id="two-decision-models-one-api" data-toc="Jev and Strands">
+<h2>Two decision models, one API</h2>
+<p>Most AI models write: answers, emails, code. A decision model doesn't write anything. You give it some text and a few typed questions, such as <em>yes or no</em>, <em>pick one of these options</em> or <em>rate this on a scale</em>, and it returns an answer to each with a probability, in a single pass. That makes it fast, cheap and easy to wire into code: no parsing, and every answer comes with a number you can set a threshold on.</p>
+<p><strong>Jev</strong>, from TypeSafe AI, started the category in September 2026. TypeSafe calls it a "System One" model, after the fast, intuitive half of thinking. It's a hosted API: you send a request and pay per token. Its size and architecture aren't published.</p>
+<p><strong>Strands Decider 2B</strong> arrived two weeks later from the Strands Agents team at AWS, as an open model anyone can download, inspect and run. It takes a small open language model (2 billion parameters), removes the part that writes text, and adds a small scoring head that rates each option you offer. Weights, code and training data are public under the Apache 2.0 licence.</p>
+<p>The interesting part is that <strong>both accept the same request.</strong> Strands Decider deliberately serves the same API shape as Jev, so one program can call either by changing a URL. That is what made a fair comparison possible.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Jev</th>
+<th>Strands Decider 2B</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Made by</td>
+<td>TypeSafe AI</td>
+<td>Strands Agents team, AWS</td>
+</tr>
+<tr>
+<td>How you use it</td>
+<td>Hosted API</td>
+<td>Download it and run it yourself</td>
+</tr>
+<tr>
+<td>Openness</td>
+<td>Closed; size and design not published</td>
+<td>Open weights, code and data (Apache 2.0)</td>
+</tr>
+<tr>
+<td>Cost</td>
+<td>$0.042 per million input tokens</td>
+<td>Free; you pay for the machine</td>
+</tr>
+<tr>
+<td>Speed</td>
+<td>About 50–100 ms per request</td>
+<td>About 115 ms on a GPU (vendor figure); seconds on a CPU</td>
+</tr>
+<tr>
+<td>Your data</td>
+<td>Sent to TypeSafe's servers</td>
+<td>Never leaves your machine</td>
+</tr>
+</tbody>
+</table>
+<figure><img alt="Jev and Strands Decider side by side: hosted and closed versus open and self-hosted, sharing the same request and answer format" src="images/autolabel-models.png" loading="lazy" /><figcaption>Two different products, one interface. The same request, a piece of text plus typed questions, gets the same kind of answer from both: a choice and a probability for every option.</figcaption></figure>
+</section>
+<section id="the-job-label-complaints-and-know-when-to-ask" data-toc="The job">
+<h2>The job: label complaints, and know when to ask</h2>
+<p>A US government agency publishes every complaint consumers send it about banks, lenders, debt collectors and credit bureaus, with personal details redacted. When filing, the consumer picks a <strong>product</strong> (credit card, mortgage, debt collection and 8 more) and an <strong>issue</strong> within it ("attempts to collect debt not owed", "problem with a purchase shown on your statement"). In 2025 alone, 1.2 million complaints came with the consumer's own words.</p>
+<p>That makes a good labeling test: real writing, real categories, and labels that came from somebody other than me. I asked each model two questions about every complaint:</p>
+<ul>
+<li><strong>Which product is this about?</strong> One of 11, each with a one-line description.</li>
+<li><strong>What is the main problem?</strong> One of the 3 to 10 issues for that product.</li>
+</ul>
+<p>But accuracy alone isn't the point. In a real labeling pipeline you let the model label what it's sure about and send the rest to a person. So the question that matters is: <strong>how many complaints can it label on its own while staying, say, 90% accurate?</strong> That only works if "90% sure" really means right 90% of the time. Both models say their probabilities are calibrated in exactly that sense. This project tests it.</p>
+</section>
+<section id="a-fair-fight" data-toc="A fair fight">
+<h2>A fair fight</h2>
+<p>Comparing a model you call over the internet with one you run yourself is easy to get wrong, so I fixed the rules first.</p>
+<ul>
+<li><strong>Fixed splits, decided before any model saw them.</strong> 120 complaints per product, picked by a seed: 110 to write the questions (dev), 440 to set thresholds (tune) and 770 to report (held-out). Nothing was tuned on the held-out set. Products are sampled equally on purpose: in the raw data three in four complaints are about credit reports, which would make "always say credit reports" look clever.</li>
+<li><strong>Real labels, untouched.</strong> Every label is the one the consumer chose. Nobody relabeled anything, including me.</li>
+<li><strong>Same instructions, each model's best wording.</strong> I wrote the questions on the dev set with both models in the loop and tried three wordings. One mattered: describing each option in a line helped Jev on the issue question (66% vs 60% on dev) but hurt Strands (54% vs 65%). So Jev gets the descriptions and Strands gets bare option names, the best of what I tried for each.</li>
+<li><strong>Thresholds set per model.</strong> Each model's confidence lives on its own scale, so each gets its own threshold, set on the tune set for a target accuracy (85%, 90% or 95%), then applied unchanged to held-out.</li>
+<li><strong>Two classic baselines.</strong> A TF-IDF classifier (word counts plus logistic regression) trained on the same 440 tune complaints, and one trained on 21,739 more. The first shows what you get with a few hundred labels; the second shows what you get when you've already paid for a lot of them.</li>
+</ul>
+<figure><img alt="How the comparison was run: public complaints, fixed splits, the same questions to Jev, Strands Decider and two classifiers, thresholds set on tune, results on held-out" src="images/autolabel-protocol.png" loading="lazy" /><figcaption>How the numbers were produced. Every method answers the same two questions about the same complaints; thresholds come from the tune set only.</figcaption></figure>
+</section>
+<section id="results" data-toc="Results">
+<h2>Results</h2>
+<p>On the 770 held-out complaints:</p>
+<table>
+<thead>
+<tr>
+<th>Product (11 options)</th>
+<th>Accuracy</th>
+<th>Labels on its own, aiming at 85%</th>
+<th>Aiming at 90%</th>
+<th>Aiming at 95%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Jev</strong></td>
+<td><strong>76%</strong></td>
+<td>70% of complaints, 86% accurate</td>
+<td>none: never reaches 90%</td>
+<td>none</td>
+</tr>
+<tr>
+<td><strong>Strands Decider 2B</strong></td>
+<td>71%</td>
+<td>62%, 86% accurate</td>
+<td><strong>39%, 91% accurate</strong></td>
+<td>31%, 93% accurate</td>
+</tr>
+<tr>
+<td>Classifier, 440 labels</td>
+<td>66%</td>
+<td>25%, 89% accurate</td>
+<td>16%, 92% accurate</td>
+<td>15%, 92% accurate</td>
+</tr>
+<tr>
+<td>Classifier, 21,739 labels</td>
+<td>78%</td>
+<td>82%, 86% accurate</td>
+<td>68%, 90% accurate</td>
+<td>37%, 97% accurate</td>
+</tr>
+</tbody>
+</table>
+<p>Three things stand out.</p>
+<p><strong>Jev is the more accurate labeler.</strong> Five points ahead of Strands on product, a clear gap; two on issue, which is within the noise. And it got there with no training examples at all, nearly matching a classifier that needed 21,739 labeled complaints.</p>
+<p><strong>Strands knows when it doesn't know.</strong> Below 90%, the two are close: both can label 62% to 70% of complaints at 86% accuracy. Above it, they part ways. Strands can label 39% of complaints at 91% accuracy, or 31% at 93%. Jev can't reach 90% at any threshold.</p>
+<p>The chart shows why. Sort each method's answers from most to least confident and keep the top slice: how accurate is that slice?</p>
+<figure><img alt="Accuracy of the labels each method is most confident about, by share of complaints labeled: Strands stays above 90% for the first 40%, Jev is flat at 88% for its first 65%" src="images/autolabel-chart-coverage-product.png" loading="lazy" /><figcaption>Further right at the same height is better. Jev's line is flat for its first 65% because it gives all of those complaints the same confidence, 1.00, so there is no way to pick its best answers out of them.</figcaption></figure>
+<p><strong>Issues are hard for everyone.</strong> Picking the issue is a much finer distinction, and the consumers' own choices are inconsistent. All four methods top out at 49% to 63%, and only the large classifier can label a meaningful share on its own (48% at 85% accuracy). For issues, a decision model is a suggestion box for a person, not a replacement.</p>
+</section>
+<section id="can-you-trust-its-confidence" data-toc="Calibration">
+<h2>Can you trust its confidence?</h2>
+<p>This is the heart of it. A model is calibrated when its confidence matches reality: of everything it says it's 90% sure about, 90% is right.</p>
+<figure><img alt="Calibration chart: Strands' dots sit close to the diagonal, while Jev's largest dot sits at 99% confidence but 82% accuracy" src="images/autolabel-chart-reliability-product.png" loading="lazy" /><figcaption>Each dot groups answers by confidence; bigger dots hold more answers. On the dashed diagonal, "90% sure" means right 90% of the time.</figcaption></figure>
+<p>Jev put 83% of all product answers at 99% confidence or more, and those were right 82% of the time. That's overconfidence: a "99%" that behaves like an "82%". Strands' biggest group sat at 95% confidence and was right 90% of the time, close to the line. Its average calibration error was 0.08, against Jev's 0.18. On issues the gap is wider: 0.07 against 0.27.</p>
+<p>In practice, this decides what a threshold can do for you. With Strands, raising the bar buys you accuracy. With Jev, beyond a point, it buys you nothing: two thirds of its answers say the same thing.</p>
+<p>Part of what looks like Jev's overconfidence is the labels themselves. For 66 of the 770 complaints, Jev, Strands and the classifier trained on 21,739 consumer labels all agreed on a product, and it wasn't the one the consumer picked. One is a letter disputing hard inquiries on a credit report, filed under "debt or credit management"; another, a problem with a payment app, filed under "credit card". When the "right answer" is wrong, a model that's correct and sure gets marked confidently wrong. But Strands faced exactly the same labels and stayed calibrated, so noise doesn't explain the whole gap.</p>
+</section>
+<section id="speed-cost-and-privacy" data-toc="Speed and cost">
+<h2>Speed, cost and privacy</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Jev</th>
+<th>Strands Decider 2B (on CPU)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Time per complaint</td>
+<td>53 ms (median)</td>
+<td>about 3 s alone on a 16-core server, and about the same per complaint in a batch</td>
+</tr>
+<tr>
+<td>Cost per 10,000 complaints</td>
+<td>$0.52</td>
+<td>no fee; about 7 hours of one 16-core server</td>
+</tr>
+<tr>
+<td>Input per complaint</td>
+<td>1,243 tokens (with option descriptions)</td>
+<td>510 tokens (bare option names)</td>
+</tr>
+<tr>
+<td>Where your text goes</td>
+<td>TypeSafe's servers</td>
+<td>nowhere</td>
+</tr>
+</tbody>
+</table>
+<p>Jev is effectively free and instant at this scale. Strands has no fee, but on a CPU it's slow. I ran three 16-core cloud servers side by side and they worked through about 70 complaints a minute. The Strands team reports about 115 ms per question on a gaming GPU, which would change that picture completely; I didn't have one to test.</p>
+<p>The case for Strands isn't speed. It's that you can run it where your data lives, inspect how it was trained, and pay nothing per call. For complaints, medical notes or anything you can't send to a third party, that may matter more than five points of accuracy.</p>
+</section>
+<section id="what-i-learned" data-toc="What I learned">
+<h2>What I learned</h2>
+<ol>
+<li><strong>Accuracy and honesty are different properties.</strong> The more accurate model was the less trustworthy one about its own answers. If you plan to auto-accept labels above a threshold, test calibration, not just accuracy.</li>
+<li><strong>A decision model with zero examples can match a classifier trained on twenty thousand.</strong> Jev labeled products within two points of a classifier that needed 21,739 labeled complaints. Strands beat the one trained on 440. If you don't have labeled data yet, start here.</li>
+<li><strong>Prompts don't transfer between models.</strong> The same option descriptions that helped Jev cost Strands 11 points on issues in my dev tests. Same API doesn't mean same behavior: tune the wording for each model on data you won't report on.</li>
+<li><strong>Your "ground truth" is somebody's guess.</strong> About 1 in 12 complaints carries a product label that all three strong methods disagree with. Every number here is agreement with what consumers picked, so a perfect score isn't possible.</li>
+<li><strong>Two models are not automatically better than one.</strong> Accepting Jev's label only when Strands agreed and was confident labeled 39% at 91%, the same as Strands alone.</li>
+<li><strong>Hardware is the real price of open.</strong> "Free" Strands took about 3 seconds per complaint on a CPU. Budget for a GPU if you need volume.</li>
+</ol>
+</section>
+<section id="limits" data-toc="Limits">
+<h2>Limits</h2>
+<ul>
+<li><strong>Noisy labels.</strong> Consumers choose their own categories, and some choices are odd. All accuracy numbers are agreement with those choices.</li>
+<li><strong>One domain, one language.</strong> US financial complaints in English, 200 to 2,500 characters long, products sampled equally. Results on support tickets or other languages may differ.</li>
+<li><strong>One version of each model.</strong> Jev <code>jev-1.13.0</code> and <code>strands-decider-2B-qwen3.5-v1-2610</code>, in November 2026. Strands also comes in larger sizes (up to 26B), which its team reports as more accurate; I only tested the 2B.</li>
+<li><strong>Small held-out set.</strong> 770 complaints, 70 per product, so each accuracy figure has a margin of about ±3 points. Jev's 5-point lead on product holds up (95% interval: 2.6 to 7.4 points); its 2-point lead on issues doesn't (−1.4 to 5.3).</li>
+<li><strong>Jev returns probabilities rounded to two decimals</strong>, so I couldn't rank answers inside its 1.00 block. Finer probabilities might let a threshold separate them.</li>
+<li><strong>Different option descriptions.</strong> Each model got its best wording from the dev set, so the two didn't see identical prompts.</li>
+<li><strong>Strands on CPU only.</strong> The speed figures for Strands are for 16-core CPU servers, not a GPU.</li>
+</ul>
+</section>
+<section id="try-it" data-toc="Try it">
+<h2>Try it</h2>
+<pre><code class="language-bash">git clone https://github.com/mani-bellan/jev-apps &amp;&amp; cd jev-apps/autolabel
+
+export TYPESAFE_API_KEY=...                   # Jev: https://console.typesafe.ai/keys
+uv run autolabel run heldout --backend jev
+
+pip install strands-decider                   # Strands Decider, on your own machine
+strands-decider serve StrandsAgents/strands-decider-2B-qwen3.5-v1-2610 --port 8000
+uv run autolabel run heldout --backend strands
+
+uv run autolabel compare                      # tables, calibration charts and an HTML report
+echo &quot;The collector keeps calling my work about a debt I already paid&quot; | uv run autolabel label - --backend jev
+</code></pre>
+<p>The repository includes the 1,320 complaints with their labels, the script that rebuilds them from the public database, both classifier baselines, and every model answer behind the numbers above.</p>
+</section>
+</main>
+</div>
+<script>
+			// Builds the side contents list from the sections, so it cannot drift from the page.
+			const toc = document.querySelector('.toc')
+			const sections = [...document.querySelectorAll('main > section[id]')]
+			const list = document.createElement('ol')
+			const links = new Map()
+			for (const section of sections) {
+				const label = section.dataset.toc || section.querySelector('h2')?.textContent.trim()
+				if (!label) continue
+				const link = document.createElement('a')
+				link.href = `#${section.id}`
+				link.textContent = label
+				const count = section.querySelectorAll('.item, tbody > tr[id]').length
+				if (count > 0) link.textContent += ` (${count})`
+				links.set(section, link)
+				const entry = document.createElement('li')
+				entry.append(link)
+				list.append(entry)
+			}
+			toc.append(list)
+			const observer = new IntersectionObserver(
+				(entries) => {
+					for (const entry of entries) {
+						if (!entry.isIntersecting) continue
+						for (const link of links.values()) link.removeAttribute('aria-current')
+						links.get(entry.target)?.setAttribute('aria-current', 'true')
+					}
+				},
+				{ rootMargin: '0px 0px -70% 0px' },
+			)
+			for (const section of links.keys()) observer.observe(section)
+
+			// A line break before the end tag of a view would show as an empty last line.
+			for (const pre of document.querySelectorAll('figure pre')) {
+				const last = pre.lastChild
+				if (last?.nodeType === Node.TEXT_NODE) last.data = last.data.trimEnd()
+			}
+
+			// Colors the heavy glyphs in a drawing, so the changed parts stand out from the light lines.
+			const heavy = /([━┃┏┓┗┛┣┫┳┻╋▶◀▲▼●◆■]+)/
+			for (const pre of document.querySelectorAll('pre.diagram')) {
+				const walker = document.createTreeWalker(pre, NodeFilter.SHOW_TEXT)
+				const texts = []
+				while (walker.nextNode()) texts.push(walker.currentNode)
+				for (const text of texts) {
+					const parts = text.data.split(heavy)
+					if (parts.length === 1) continue
+					const pieces = parts.map((part, index) => {
+						if (index % 2 === 0) return part
+						const span = document.createElement('span')
+						span.className = 'hot'
+						span.textContent = part
+						return span
+					})
+					text.replaceWith(...pieces)
+				}
+			}
+
+			// Colors the added and removed lines in a diff view. The view holds text only.
+			for (const pre of document.querySelectorAll('pre.diff')) {
+				const lines = pre.textContent.split('\n').map((line) => {
+					const span = document.createElement('span')
+					span.className = line.startsWith('+') ? 'line add' : line.startsWith('-') ? 'line del' : 'line'
+					span.textContent = line === '' ? ' ' : line
+					return span
+				})
+				pre.replaceChildren(...lines)
+			}
+
+			// Plays the one-shot motion of a picture when it scrolls into view, and adds a Replay
+			// button. Without this script the pictures are complete and still.
+			if (matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+				const play = new IntersectionObserver((entries) => {
+					for (const entry of entries) {
+						if (!entry.isIntersecting) continue
+						entry.target.classList.add('play')
+						play.unobserve(entry.target)
+					}
+				})
+				for (const figure of document.querySelectorAll('figure')) {
+					if (!figure.querySelector('.seq, .bars')) continue
+					for (const sequence of figure.querySelectorAll('.seq')) {
+						;[...sequence.children].forEach((child, index) => child.style.setProperty('--i', index))
+					}
+					play.observe(figure)
+					// A picture with its own controls needs no Replay button.
+					if (figure.querySelector('input, select, button')) continue
+					const button = document.createElement('button')
+					button.type = 'button'
+					button.className = 'replay'
+					button.textContent = 'Replay'
+					button.addEventListener('click', () => {
+						figure.classList.remove('play')
+						void figure.offsetWidth
+						figure.classList.add('play')
+					})
+					const caption = figure.querySelector('figcaption') ?? figure
+					caption.append(button)
+				}
+			}
+		</script>
+</body>
+</html>

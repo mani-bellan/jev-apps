@@ -1,6 +1,6 @@
 # Jev apps
 
-Four small Python apps built on [Jev](https://docs.typesafe.ai/introduction), TypeSafe AI's
+Five small Python apps built on [Jev](https://docs.typesafe.ai/introduction), TypeSafe AI's
 decision model.
 
 - **Pipeline failure triage** (`triage.py`): decides what to do about a failed data-pipeline task.
@@ -10,12 +10,16 @@ decision model.
 - **Scam Shield** ([`scam-shield/`](scam-shield)): checks a suspicious text or chat message in under a
   second (likely a scam, be careful, or looks genuine) and investigates its links when unsure. Includes 89 real
   messages received in India, collected from public sources, and an evaluation harness.
+- **Autolabel** ([`autolabel/`](autolabel)): labels consumer complaints by product and issue with Jev or with the
+  open Strands Decider (same API), keeps only the labels it is sure of, and compares the two on 770 held-out real
+  complaints: accuracy, calibration, and how much each can label on its own.
 
 Read the write-ups:
 
 - [Triage pipeline failures in 100 ms with Jev](blog/jev-pipeline-triage.md)
 - [Who's watching your AI agent? A heart monitor and a circuit breaker](blog/agent-ekg.md)
 - [A second opinion on scam texts in under a second: Scam Shield](blog/scam-shield.md)
+- [How sure is "sure"? Jev vs Strands Decider on 770 real complaints](blog/autolabel.md)
 
 ## API key
 

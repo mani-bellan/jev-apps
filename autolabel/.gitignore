@@ -1,0 +1,6 @@
+data/cache/
+data/train_large.jsonl
+# Model answers are committed; the comparison and the classifiers are rebuilt by `autolabel compare`.
+!results/
+results/compare/
+results/baselines.json

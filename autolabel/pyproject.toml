@@ -1,0 +1,21 @@
+[project]
+name = "autolabel"
+version = "0.1.0"
+description = "Autolabel: label consumer complaints with a decision model (Jev or Strands Decider) and keep only the labels it is sure of"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["httpx>=0.27", "scikit-learn>=1.5"]
+
+[dependency-groups]
+# Only `autolabel build-data` needs it, to read the public complaint database's Parquet files.
+data = ["duckdb>=1.1"]
+
+[project.scripts]
+autolabel = "autolabel.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["autolabel"]
