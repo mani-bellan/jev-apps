@@ -1,6 +1,6 @@
 # How sure is "sure"? Jev vs Strands Decider on 770 real complaints
 
-*Blog · AI · Data labeling · Jev · Strands · November 15, 2026 · 12 min read · [Source code on GitHub](https://github.com/mani-bellan/jev-apps/tree/main/autolabel)*
+*Blog · AI · Data labeling · Jev · Strands · November 15, 2026 · 13 min read · [Source code on GitHub](https://github.com/mani-bellan/jev-apps/tree/main/autolabel)*
 
 *"I paid this debt in March. The collector still calls me three times a day, and now it shows up on my credit report."*
 
@@ -74,6 +74,20 @@ Comparing a model you call over the internet with one you run yourself is easy t
 ![How the comparison was run: public complaints, fixed splits, the same questions to Jev, Strands Decider and two classifiers, thresholds set on tune, results on held-out](https://raw.githubusercontent.com/mani-bellan/jev-apps/main/blog/images/autolabel-protocol.png)
 
 *How the numbers were produced. Every method answers the same two questions about the same complaints; thresholds come from the tune set only.*
+
+## Three complaints, two models
+
+Before the averages, here is what a run actually looks like. The three complaints below are from the held-out set. The bars show the probabilities each model gave its top three products, and the box underneath shows what Autolabel did with that answer, using each model's threshold for 85% accuracy: Jev's label is kept at 0.99 or more, Strands' at 0.80 or more. (85% is the strictest target at which both models can label anything on their own.)
+
+![Three held-out complaints with Jev's and Strands Decider's top three products and probabilities, and whether Autolabel kept the label or sent it to a person](https://raw.githubusercontent.com/mani-bellan/jev-apps/main/blog/images/autolabel-examples.png)
+
+*Three real complaints, as each model saw them. Excerpts are lightly trimmed; the issue answers are left out to keep it readable.*
+
+**1. The clue is one word.** Nothing in this complaint says "mortgage", except "escrow", the account a mortgage lender keeps for property taxes and insurance. Jev caught it and was certain, and Autolabel kept its label, correctly. Strands missed the clue and guessed credit card, but only at 0.37, so the complaint went to a person. Strands was wrong, but it didn't cost a wrong label, only a minute of someone's time.
+
+**2. Debt collector, or lender?** A $2,400 high-interest loan eating half a paycheck, with daily calls. Jev split almost evenly between debt collection and a payday or personal loan, so its answer went to a person. Strands said payday or personal loan at 0.81, just over its bar, and was right.
+
+**3. Honestly ambiguous.** Someone keeps calling this consumer at work about money they owe. A collector, or the lender itself? The text doesn't say; the consumer filed it under payday loans. Strands spread its bet across three products and sent it to a person, which is the right call for a complaint like this. Jev answered debt collection at 1.00, so Autolabel kept a label the consumer would disagree with, without anyone looking. That happened often enough to matter: 74 of Jev's 184 wrong product answers came at 0.99 or higher.
 
 ## Results
 

@@ -128,7 +128,20 @@ four complaints are about credit reports, which would make "always say credit re
   Decider on a 16-core CPU (fp32, no GPU): about 3 s per complaint, alone or in a batch (three such servers labeled
   about 70 complaints a minute), 510 input tokens, no fee. The Strands team reports about 115 ms per question on a GPU.
 
-Every model answer behind these numbers is in `results/jev/` and `results/strands/` (`tune.jsonl`, `heldout.jsonl`,
+## Three examples
+
+![Three held-out complaints with each model's top three products and what Autolabel did](../blog/images/autolabel-examples.png)
+
+Three held-out complaints where the two models disagree, at each model's 85%-accuracy threshold (Jev ≥ 0.99,
+Strands Decider ≥ 0.80), product question only. The answers are in `results/*/heldout.jsonl` under these IDs.
+
+| Complaint ID | Consumer's product | Jev | Strands Decider |
+| --- | --- | --- | --- |
+| 14674719 (mentions an escrow account) | Mortgage | Mortgage 1.00: kept, correct | Credit card 0.37: sent to a person |
+| 13657214 (high-interest loan, half a paycheck) | Payday or personal loan | Debt collection 0.51: sent to a person | Payday or personal loan 0.81: kept, correct |
+| 12427753 (calls at work about a debt) | Payday or personal loan | Debt collection 1.00: kept, disagrees with the consumer | Payday or personal loan 0.27: sent to a person |
+
+Every model answer behind the results and examples above is in `results/jev/` and `results/strands/` (`tune.jsonl`, `heldout.jsonl`,
 `dev.jsonl`, and the other dev wordings as `dev-<variant>.jsonl`). `autolabel compare` rebuilds the tables and
 `results/compare/report.html` from them without calling either model (the large classifier needs
 `data/train_large.jsonl`, which `build-data` writes).

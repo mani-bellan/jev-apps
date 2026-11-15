@@ -782,7 +782,7 @@ blockquote p{margin:0}
 <nav class="toc" aria-label="Contents"></nav>
 <main>
 <header id="top"><h1>How sure is "sure"? Jev vs Strands Decider on 770 real complaints</h1>
-<p class="meta">Blog · AI · Data labeling · Jev · Strands · November 15, 2026 · 12 min read · <a href="https://github.com/mani-bellan/jev-apps/tree/main/autolabel">Source code on GitHub</a></p>
+<p class="meta">Blog · AI · Data labeling · Jev · Strands · November 15, 2026 · 13 min read · <a href="https://github.com/mani-bellan/jev-apps/tree/main/autolabel">Source code on GitHub</a></p>
 <p><em>"I paid this debt in March. The collector still calls me three times a day, and now it shows up on my credit report."</em></p>
 <p>Is that a complaint about debt collection, or about credit reporting? Is the problem the calls, or the report? Somebody has to decide, for every complaint, support ticket and survey answer. Teams that get thousands a week either pay people to sort them, or train a classifier, which first needs thousands of examples that people have already sorted.</p>
 <p>Decision models offer a third way. You describe the categories in plain words, and the model picks one and tells you how sure it is. If it's sure, you keep its label. If not, a person looks. Two of these models came out two weeks apart this autumn: Jev, a paid hosted service, and Strands Decider, which is free and open. Both say they give you probabilities you can trust. I wanted to see which one I could actually leave alone with real data, judged the same way.</p></header>
@@ -893,6 +893,14 @@ blockquote p{margin:0}
 <li><strong>Two classic baselines.</strong> A TF-IDF classifier (word counts plus logistic regression) trained on the same 440 tune complaints, and one trained on 21,739 more. The first shows what you get with a few hundred labels; the second shows what you get when you've already paid for a lot of them.</li>
 </ul>
 <figure><img alt="How the comparison was run: public complaints, fixed splits, the same questions to Jev, Strands Decider and two classifiers, thresholds set on tune, results on held-out" src="images/autolabel-protocol.png" loading="lazy" /><figcaption>How the numbers were produced. Every method answers the same two questions about the same complaints; thresholds come from the tune set only.</figcaption></figure>
+</section>
+<section id="three-complaints-two-models" data-toc="Examples">
+<h2>Three complaints, two models</h2>
+<p>Before the averages, here is what a run actually looks like. The three complaints below are from the held-out set. The bars show the probabilities each model gave its top three products, and the box underneath shows what Autolabel did with that answer, using each model's threshold for 85% accuracy: Jev's label is kept at 0.99 or more, Strands' at 0.80 or more. (85% is the strictest target at which both models can label anything on their own.)</p>
+<figure><img alt="Three held-out complaints with Jev's and Strands Decider's top three products and probabilities, and whether Autolabel kept the label or sent it to a person" src="images/autolabel-examples.png" loading="lazy" /><figcaption>Three real complaints, as each model saw them. Excerpts are lightly trimmed; the issue answers are left out to keep it readable.</figcaption></figure>
+<p><strong>1. The clue is one word.</strong> Nothing in this complaint says "mortgage", except "escrow", the account a mortgage lender keeps for property taxes and insurance. Jev caught it and was certain, and Autolabel kept its label, correctly. Strands missed the clue and guessed credit card, but only at 0.37, so the complaint went to a person. Strands was wrong, but it didn't cost a wrong label, only a minute of someone's time.</p>
+<p><strong>2. Debt collector, or lender?</strong> A $2,400 high-interest loan eating half a paycheck, with daily calls. Jev split almost evenly between debt collection and a payday or personal loan, so its answer went to a person. Strands said payday or personal loan at 0.81, just over its bar, and was right.</p>
+<p><strong>3. Honestly ambiguous.</strong> Someone keeps calling this consumer at work about money they owe. A collector, or the lender itself? The text doesn't say; the consumer filed it under payday loans. Strands spread its bet across three products and sent it to a person, which is the right call for a complaint like this. Jev answered debt collection at 1.00, so Autolabel kept a label the consumer would disagree with, without anyone looking. That happened often enough to matter: 74 of Jev's 184 wrong product answers came at 0.99 or higher.</p>
 </section>
 <section id="results" data-toc="Results">
 <h2>Results</h2>
