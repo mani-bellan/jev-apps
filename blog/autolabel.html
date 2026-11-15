@@ -782,7 +782,7 @@ blockquote p{margin:0}
 <nav class="toc" aria-label="Contents"></nav>
 <main>
 <header id="top"><h1>How sure is "sure"? Jev vs Strands Decider on 770 real complaints</h1>
-<p class="meta">Blog · AI · Data labeling · Jev · Strands · November 15, 2026 · 11 min read · <a href="https://github.com/mani-bellan/jev-apps/tree/main/autolabel">Source code on GitHub</a></p>
+<p class="meta">Blog · AI · Data labeling · Jev · Strands · November 15, 2026 · 12 min read · <a href="https://github.com/mani-bellan/jev-apps/tree/main/autolabel">Source code on GitHub</a></p>
 <p><em>"I paid this debt in March. The collector still calls me three times a day, and now it shows up on my credit report."</em></p>
 <p>Is that a complaint about debt collection, or about credit reporting? Is the problem the calls, or the report? Somebody has to decide, for every complaint, support ticket and survey answer. Teams that get thousands a week either pay people to sort them, or train a classifier, which first needs thousands of examples that people have already sorted.</p>
 <p>Decision models offer a third way. You describe the categories in plain words, and the model picks one and tells you how sure it is. If it's sure, you keep its label. If not, a person looks. Two of these models came out two weeks apart this autumn: Jev, a paid hosted service, and Strands Decider, which is free and open. Both say they give you probabilities you can trust. I wanted to see which one I could actually leave alone with real data, judged the same way.</p></header>
@@ -878,6 +878,8 @@ blockquote p{margin:0}
 <li><strong>What is the main problem?</strong> One of the 3 to 10 issues for that product.</li>
 </ul>
 <p>But accuracy alone isn't the point. In a real labeling pipeline you let the model label what it's sure about and send the rest to a person. So the question that matters is: <strong>how many complaints can it label on its own while staying, say, 90% accurate?</strong> That only works if "90% sure" really means right 90% of the time. Both models say their probabilities are calibrated in exactly that sense. This project tests it.</p>
+<p>Autolabel is built around that idea. Each complaint gets two questions: first the product, then the issue, offering only the issues of the product the model picked. A few lines of plain code then compare each answer's confidence with a threshold: if both clear it, the label is kept; if not, the complaint goes to a person with the model's guess attached. The thresholds aren't guesses either: they're set once per model, on complaints whose labels I already have, for the accuracy I want. The same client talks to Jev or to a Strands Decider server; switching is one setting.</p>
+<figure><img alt="How Autolabel labels a complaint: build the request, ask the product, then the issue, compare confidence with per-model thresholds, and either keep the label or send it to a review queue" src="images/autolabel-architecture.png" loading="lazy" /><figcaption>How Autolabel works. Purple boxes are calls to a decision model, Jev or Strands Decider through the same client; grey boxes are plain code. The dashed row runs once, on labeled complaints, to set each model's thresholds.</figcaption></figure>
 </section>
 <section id="a-fair-fight" data-toc="A fair fight">
 <h2>A fair fight</h2>
@@ -887,6 +889,7 @@ blockquote p{margin:0}
 <li><strong>Real labels, untouched.</strong> Every label is the one the consumer chose. Nobody relabeled anything, including me.</li>
 <li><strong>Same instructions, each model's best wording.</strong> I wrote the questions on the dev set with both models in the loop and tried three wordings. One mattered: describing each option in a line helped Jev on the issue question (66% vs 60% on dev) but hurt Strands (54% vs 65%). So Jev gets the descriptions and Strands gets bare option names, the best of what I tried for each.</li>
 <li><strong>Thresholds set per model.</strong> Each model's confidence lives on its own scale, so each gets its own threshold, set on the tune set for a target accuracy (85%, 90% or 95%), then applied unchanged to held-out.</li>
+<li><strong>Issues scored on their own.</strong> For the numbers below, the issue question is told the true product, so a wrong product doesn't also count as a wrong issue. (The app itself asks with the product it picked.)</li>
 <li><strong>Two classic baselines.</strong> A TF-IDF classifier (word counts plus logistic regression) trained on the same 440 tune complaints, and one trained on 21,739 more. The first shows what you get with a few hundred labels; the second shows what you get when you've already paid for a lot of them.</li>
 </ul>
 <figure><img alt="How the comparison was run: public complaints, fixed splits, the same questions to Jev, Strands Decider and two classifiers, thresholds set on tune, results on held-out" src="images/autolabel-protocol.png" loading="lazy" /><figcaption>How the numbers were produced. Every method answers the same two questions about the same complaints; thresholds come from the tune set only.</figcaption></figure>

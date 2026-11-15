@@ -1,6 +1,6 @@
 # How sure is "sure"? Jev vs Strands Decider on 770 real complaints
 
-*Blog · AI · Data labeling · Jev · Strands · November 15, 2026 · 11 min read · [Source code on GitHub](https://github.com/mani-bellan/jev-apps/tree/main/autolabel)*
+*Blog · AI · Data labeling · Jev · Strands · November 15, 2026 · 12 min read · [Source code on GitHub](https://github.com/mani-bellan/jev-apps/tree/main/autolabel)*
 
 *"I paid this debt in March. The collector still calls me three times a day, and now it shows up on my credit report."*
 
@@ -54,6 +54,12 @@ That makes a good labeling test: real writing, real categories, and labels that 
 
 But accuracy alone isn't the point. In a real labeling pipeline you let the model label what it's sure about and send the rest to a person. So the question that matters is: **how many complaints can it label on its own while staying, say, 90% accurate?** That only works if "90% sure" really means right 90% of the time. Both models say their probabilities are calibrated in exactly that sense. This project tests it.
 
+Autolabel is built around that idea. Each complaint gets two questions: first the product, then the issue, offering only the issues of the product the model picked. A few lines of plain code then compare each answer's confidence with a threshold: if both clear it, the label is kept; if not, the complaint goes to a person with the model's guess attached. The thresholds aren't guesses either: they're set once per model, on complaints whose labels I already have, for the accuracy I want. The same client talks to Jev or to a Strands Decider server; switching is one setting.
+
+![How Autolabel labels a complaint: build the request, ask the product, then the issue, compare confidence with per-model thresholds, and either keep the label or send it to a review queue](https://raw.githubusercontent.com/mani-bellan/jev-apps/main/blog/images/autolabel-architecture.png)
+
+*How Autolabel works. Purple boxes are calls to a decision model, Jev or Strands Decider through the same client; grey boxes are plain code. The dashed row runs once, on labeled complaints, to set each model's thresholds.*
+
 ## A fair fight
 
 Comparing a model you call over the internet with one you run yourself is easy to get wrong, so I fixed the rules first.
@@ -62,6 +68,7 @@ Comparing a model you call over the internet with one you run yourself is easy t
 - **Real labels, untouched.** Every label is the one the consumer chose. Nobody relabeled anything, including me.
 - **Same instructions, each model's best wording.** I wrote the questions on the dev set with both models in the loop and tried three wordings. One mattered: describing each option in a line helped Jev on the issue question (66% vs 60% on dev) but hurt Strands (54% vs 65%). So Jev gets the descriptions and Strands gets bare option names, the best of what I tried for each.
 - **Thresholds set per model.** Each model's confidence lives on its own scale, so each gets its own threshold, set on the tune set for a target accuracy (85%, 90% or 95%), then applied unchanged to held-out.
+- **Issues scored on their own.** For the numbers below, the issue question is told the true product, so a wrong product doesn't also count as a wrong issue. (The app itself asks with the product it picked.)
 - **Two classic baselines.** A TF-IDF classifier (word counts plus logistic regression) trained on the same 440 tune complaints, and one trained on 21,739 more. The first shows what you get with a few hundred labels; the second shows what you get when you've already paid for a lot of them.
 
 ![How the comparison was run: public complaints, fixed splits, the same questions to Jev, Strands Decider and two classifiers, thresholds set on tune, results on held-out](https://raw.githubusercontent.com/mani-bellan/jev-apps/main/blog/images/autolabel-protocol.png)

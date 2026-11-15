@@ -40,6 +40,10 @@ echo "The collector keeps calling my work about a debt I already paid" | uv run 
 
 ## How it works
 
+![How Autolabel labels a complaint](../blog/images/autolabel-architecture.png)
+
+Each complaint gets two decision-model calls: the product, then the issue among that product's issues. Plain code keeps the label when both confidences clear the model's thresholds and sends the rest to review. The thresholds come from `autolabel compare` on the labeled tune split. (For measurement, `run` asks both questions in one call and gives the issue question the true product.)
+
 | File | Role |
 | --- | --- |
 | `autolabel/deciders.py` | One client for any `/v1/systemone` server. A backend is a URL, a model name, an optional API key and a price. Retries on 429, 5xx and dropped connections |
